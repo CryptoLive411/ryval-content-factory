@@ -97,16 +97,31 @@ async function renderSlide(opts: {
     }
   }
 
-  // Header: RYVAL wordmark + index pill
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "700 28px ui-sans-serif, system-ui, -apple-system, Segoe UI, Inter, sans-serif";
-  ctx.textBaseline = "top";
-  ctx.fillText("RYVAL", PAD, PAD);
+  // Header: logo image (or wordmark fallback) + index pill
+  const logoH = 44;
+  if (opts.logoUrl) {
+    const logo = await loadImage(opts.logoUrl);
+    if (logo) {
+      const logoW = logoH * (logo.width / logo.height);
+      ctx.drawImage(logo, PAD, PAD, logoW, logoH);
+    } else {
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 32px ui-sans-serif, system-ui, sans-serif";
+      ctx.textBaseline = "top";
+      ctx.fillText("RYVAL", PAD, PAD + 6);
+    }
+  } else {
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 32px ui-sans-serif, system-ui, sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillText("RYVAL", PAD, PAD + 6);
+  }
   ctx.fillStyle = "rgba(255,255,255,0.65)";
   ctx.font = "600 22px ui-sans-serif, system-ui, sans-serif";
+  ctx.textBaseline = "top";
   const badge = opts.isCTA ? "CTA" : `${opts.index + 1}/${opts.total}`;
   const bw = ctx.measureText(badge).width;
-  ctx.fillText(badge, W - PAD - bw, PAD + 4);
+  ctx.fillText(badge, W - PAD - bw, PAD + 14);
 
   if (opts.isCTA) {
     // App screen mock area (top-center)
