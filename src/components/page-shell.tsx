@@ -14,8 +14,9 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 }
 
 export function PageShell({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("p-6 md:p-10 max-w-7xl mx-auto", className)}>{children}</div>;
+  return <div className={cn("p-4 md:p-10 max-w-7xl mx-auto", className)}>{children}</div>;
 }
+
 
 export function StatCard({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (

@@ -234,11 +234,12 @@ export const generateBackground = createServerFn({ method: "POST" })
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
-        messages: [{ role: "user", content: `${data.prompt}\n\nStyle: premium soccer / student-athlete world — real settings like college campuses, soccer fields, locker rooms, athletic gyms, training grounds, stadiums, dorm rooms, bleachers. Either cinematic photographic OR clean flat-vector cartoon illustration OR bold editorial illustration — pick whatever best fits the scene. Dark moody palette: deep navy, charcoal, with a single electric accent. Vertical 9:16 composition. Strong subject, clear focal point. NO text, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic gradients, NO corporate stock imagery (no suits, no boardrooms, no handshakes).` }],
+        model: "google/gemini-3.1-flash-image-preview",
+        messages: [{ role: "user", content: `${data.prompt}\n\nFormat: vertical 4:5 aspect ratio composition optimized for a 1080x1350 social post — subject placed safely in the central 80% so nothing critical gets cropped. Style: premium soccer / student-athlete world — real settings like college campuses, soccer fields, locker rooms, athletic gyms, training grounds, stadiums, dorm rooms, bleachers. Either cinematic photographic OR clean flat-vector cartoon illustration OR bold editorial illustration — pick whatever best fits the scene. Dark moody palette: deep navy, charcoal, with a single electric blue accent. Strong subject, clear focal point, rich depth, professional lighting. NO text, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic gradients, NO corporate stock imagery (no suits, no boardrooms, no handshakes).` }],
         modalities: ["image", "text"],
       }),
     });
+
     if (r.status === 429) throw new Error("Rate limit on image gateway. Wait a moment.");
     if (r.status === 402) throw new Error("AI credits exhausted.");
     if (!r.ok) throw new Error(`Image gateway error (${r.status})`);
