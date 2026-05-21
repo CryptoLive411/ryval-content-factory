@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { CarouselPreview } from "@/components/carousel-preview";
 import { CATEGORIES, PLATFORMS, ACCOUNTS, AUDIENCES, TONES, CTA_TYPES } from "@/lib/ryval";
 import { exportPostForTikTok, renderPostSlideUrls } from "@/lib/tiktok-export";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/generate")({ component: Generate });
 
