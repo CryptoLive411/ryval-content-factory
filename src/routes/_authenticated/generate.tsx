@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Sparkles, Loader2, Download, GraduationCap, Megaphone } from "lucide-react";
-import { generatePosts, generateBackground, generateCollegeCopy } from "@/lib/generate.functions";
+import { generatePosts, generateBackground, generateCollegeCopy, generateSchoolLogo } from "@/lib/generate.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { PageHeader, PageShell } from "@/components/page-shell";
