@@ -146,7 +146,7 @@ function Generate() {
   });
 
 
-  const sel = (label: string, key: keyof typeof form, opts: ReadonlyArray<{ value: string; label: string } | string>) => (
+  const sel = (label: string, key: keyof FormState, opts: ReadonlyArray<SelectOption>) => (
     <div className="space-y-2">
       <Label>{label}</Label>
       <Select value={String(form[key])} onValueChange={v => setForm(f => ({ ...f, [key]: isNaN(Number(v)) ? v : Number(v) }))}>
@@ -166,12 +166,12 @@ function Generate() {
     <PageShell>
       <PageHeader title="Generate" subtitle="Spin up a batch of slideshow drafts. Short, direct, premium." />
       <div className="grid lg:grid-cols-3 gap-4 mb-6">
-        {sel("Platform", "platform", PLATFORMS as any)}
-        {sel("Account", "account", ACCOUNTS as any)}
-        {sel("Audience", "audience", AUDIENCES as any)}
-        {sel("Category", "category", CATEGORIES as any)}
-        {sel("Tone", "tone", TONES as any)}
-        {sel("CTA type", "ctaType", CTA_TYPES as any)}
+        {sel("Platform", "platform", PLATFORMS)}
+        {sel("Account", "account", ACCOUNTS)}
+        {sel("Audience", "audience", AUDIENCES)}
+        {sel("Category", "category", CATEGORIES)}
+        {sel("Tone", "tone", TONES)}
+        {sel("CTA type", "ctaType", CTA_TYPES)}
         {sel("Number of posts", "count", [{value:"5",label:"5"},{value:"10",label:"10"},{value:"25",label:"25"},{value:"50",label:"50"}])}
         {sel("Slides per post", "slidesPerPost", [{value:"5",label:"5"},{value:"6",label:"6"},{value:"7",label:"7"}])}
         <div className="space-y-2">
@@ -200,7 +200,7 @@ function Generate() {
                 <h3 className="font-bold text-lg text-balance">{p.hook}</h3>
                 <span className="text-xs text-muted-foreground">Draft #{i + 1}</span>
               </div>
-              <CarouselPreview post={p as any} />
+              <CarouselPreview post={p} />
               <div className="mt-4 text-sm text-muted-foreground space-y-1">
                 <p><span className="text-foreground font-medium">Caption:</span> {p.caption}</p>
                 <p className="text-primary">{p.hashtags}</p>
