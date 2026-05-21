@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Sparkles, Loader2 } from "lucide-react";
 import { generatePosts, generateBackground } from "@/lib/generate.functions";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { PageHeader, PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -22,13 +23,16 @@ import { CATEGORIES, PLATFORMS, ACCOUNTS, AUDIENCES, TONES, CTA_TYPES } from "@/
 
 export const Route = createFileRoute("/_authenticated/generate")({ component: Generate });
 
+type DbEnums = Database["public"]["Enums"];
+type PostInsert = Database["public"]["Tables"]["posts"]["Insert"];
+
 type FormState = {
   count: number;
   slidesPerPost: number;
-  platform: string;
-  account: string;
-  audience: string;
-  category: string;
+  platform: DbEnums["platform"];
+  account: DbEnums["account"];
+  audience: DbEnums["audience"];
+  category: DbEnums["category"];
   tone: string;
   ctaType: string;
   includeAppScreen: boolean;
@@ -53,6 +57,7 @@ type GeneratedPost = {
 };
 
 type SelectOption = { value: string; label: string } | string;
+type SelectKey = Exclude<keyof FormState, "includeAppScreen">;
 
 function Generate() {
   const qc = useQueryClient();
