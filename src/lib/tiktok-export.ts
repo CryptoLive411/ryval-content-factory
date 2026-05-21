@@ -58,6 +58,28 @@ function ctaLabels(ctaType?: string | null) {
   return { tag: "COMING SOON · JOIN THE WAITLIST", btn: "Join the waitlist →" };
 }
 
+export async function renderPostSlideUrls(post: SlidePost): Promise<string[]> {
+  const slides = getSlides(post);
+  const cta = ctaLabels(post.cta_type);
+  const bgs = post.bg_images ?? [];
+  const urls: string[] = [];
+  for (let i = 0; i < slides.length; i++) {
+    const s = slides[i];
+    const blob = await renderSlide({
+      text: s.text,
+      isCTA: s.isCTA,
+      index: s.index,
+      total: slides.length,
+      bgUrl: s.isCTA ? null : (bgs[s.index] ?? post.bg_image_url ?? null),
+      appScreenUrl: post.app_screen_url ?? null,
+      logoUrl: post.logo_url ?? null,
+      cta,
+    });
+    urls.push(URL.createObjectURL(blob));
+  }
+  return urls;
+}
+
 async function renderSlide(opts: {
   text: string;
   isCTA: boolean;
