@@ -73,6 +73,81 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
   throw lastErr;
 }
 
+function SaveableSlideGallery({ post }: { post: GeneratedPost }) {
+  const [urls, setUrls] = useState<string[]>([]);
+  const [rendering, setRendering] = useState(false);
+  const bgsKey = (post.bg_images ?? []).join("|");
+
+  useEffect(() => {
+    let cancelled = false;
+    const created: string[] = [];
+    setRendering(true);
+    renderPostSlideUrls(post)
+      .then((next) => {
+        if (cancelled) {
+          next.forEach((u) => URL.revokeObjectURL(u));
+          return;
+        }
+        created.push(...next);
+        setUrls(next);
+      })
+      .catch((e) => console.error("slide render failed", e))
+      .finally(() => {
+        if (!cancelled) setRendering(false);
+      });
+    return () => {
+      cancelled = true;
+      created.forEach((u) => URL.revokeObjectURL(u));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bgsKey, post.cta, post.app_screen_url, post.logo_url, post.cta_type]);
+
+  const slug =
+    (post.hook ?? "post")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 40) || "post";
+
+  if (rendering && urls.length === 0) {
+    return (
+      <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-3.5 animate-spin" /> Preparing saveable slides…
+      </div>
+    );
+  }
+  if (urls.length === 0) return null;
+
+  return (
+    <div className="mt-6">
+      <div className="flex items-baseline justify-between mb-2">
+        <h4 className="text-sm font-semibold">Save individual slides</h4>
+        <span className="text-[11px] text-muted-foreground">
+          Long-press on mobile to save · tap to download
+        </span>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {urls.map((u, i) => (
+          <a
+            key={u}
+            href={u}
+            download={`${slug}-slide-${String(i + 1).padStart(2, "0")}.png`}
+            className="block aspect-[4/5] rounded-lg overflow-hidden border border-border bg-[#05080f] active:opacity-80"
+          >
+            <img
+              src={u}
+              alt={`Slide ${i + 1}`}
+              className="w-full h-full object-cover select-none"
+              draggable={false}
+              style={{ WebkitTouchCallout: "default" } as React.CSSProperties}
+            />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function RyvalDraftCard({ post }: { post: GeneratedPost }) {
   const ref = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
@@ -98,6 +173,7 @@ function RyvalDraftCard({ post }: { post: GeneratedPost }) {
       setBusy(false);
     }
   };
+  const slidesReady = (post.bg_images ?? []).some(Boolean);
   return (
     <div ref={ref} className="rounded-xl border border-border bg-gradient-card p-5">
       <div className="flex justify-between items-baseline mb-4 gap-3">
@@ -108,10 +184,11 @@ function RyvalDraftCard({ post }: { post: GeneratedPost }) {
           ) : (
             <Download className="size-3 mr-1.5" />
           )}
-          Download
+          Download ZIP
         </Button>
       </div>
       <CarouselPreview post={post} />
+      {slidesReady && <SaveableSlideGallery post={post} />}
       <div className="mt-4 text-sm text-muted-foreground space-y-1">
         <p>
           <span className="text-foreground font-medium">Caption:</span> {post.caption}
