@@ -252,8 +252,16 @@ function Generate() {
     if (!collegePost) return;
     setCollegeStatuses(prev => prev.map((s, i) => i === idx ? "loading" : s));
     try {
+      const useComposed = collegeComposed;
+      const prompt = useComposed
+        ? buildComposedPrompt(collegePost.slides[idx], collegePost.meta)
+        : collegePost.slides[idx].imagePrompt;
       const { url } = await withRetry(
-        () => genBg({ data: { prompt: collegePost.slides[idx].imagePrompt, model: "nano-pro", stylePreset: "college" } }),
+        () => genBg({ data: {
+          prompt,
+          model: useComposed ? "openai" : "nano-pro",
+          stylePreset: useComposed ? "college-composed" : "college",
+        } }),
         3,
       );
       setCollegeBgs(prev => { const n = [...prev]; n[idx] = url; return n; });
@@ -268,13 +276,34 @@ function Generate() {
     if (!collegePost) return;
     const slug = `${collegePost.meta.school}-${collegePost.meta.sport}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     try {
-      await exportCollegePost({
-        post: collegePost,
-        bgImages: collegeBgs,
-        logoUrl: collegeAssets.logoUrl,
-        appScreenUrl: collegeAssets.screenUrl,
-        filenameBase: slug,
-      });
+      if (collegeComposed) {
+        // OpenAI composed slides — images already contain everything. Just zip them.
+        const zip = new JSZip();
+        for (let i = 0; i < collegeBgs.length; i++) {
+          const url = collegeBgs[i];
+          if (!url) continue;
+          const blob = await fetch(url).then(r => r.blob());
+          zip.file(`${slug}-slide-${String(i + 1).padStart(2, "0")}.png`, blob);
+        }
+        zip.file("caption.txt", `${collegePost.caption}\n\n${collegePost.hashtags}\n`);
+        const out = await zip.generateAsync({ type: "blob" });
+        const dl = URL.createObjectURL(out);
+        const a = document.createElement("a");
+        a.href = dl;
+        a.download = `${slug}-tiktok.zip`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(dl), 1000);
+      } else {
+        await exportCollegePost({
+          post: collegePost,
+          bgImages: collegeBgs,
+          logoUrl: collegeAssets.logoUrl,
+          appScreenUrl: collegeAssets.screenUrl,
+          filenameBase: slug,
+        });
+      }
       toast.success("Pack downloaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export failed");
