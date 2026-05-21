@@ -22,20 +22,24 @@ Ryval is a soccer recruiting app that helps players get discovered by college co
 NARRATIVE STRUCTURE (mandatory):
 - Slide 1 (hook): Name the PROBLEM bluntly. E.g. "Recruiting is rigged against you."
 - Middle slides: Twist the knife — show WHY it's broken, what people get wrong, what it costs them. Each slide must escalate.
-- Second-to-last slide: Pivot to the SOLUTION / what to do instead.
-- CTA slide: Hard call to action tied to the chosen CTA type (waitlist / coming soon / follow).
+- Second-to-last slide: Pivot to the SOLUTION / what to do instead. Talk about the solution generically — DO NOT name Ryval yet.
+- CTA slide: This is the ONLY slide where Ryval is named/plugged. Hard call to action tied to the chosen CTA type (waitlist / coming soon / follow).
+- DO NOT mention "Ryval", "the app", "our platform", or any product plug in slides 1 through second-to-last. Those slides must read as pure problem + real-world advice.
 - Every post must move from PROBLEM → ESCALATION → SOLUTION → CTA. No random tip lists.
 
 WRITING RULES:
 - Max 12 words per slide. Punchy, direct, premium. Each slide reads on its own.
 - Tone: direct, human, confident, useful, slightly intense, premium, modern. Never cheesy, never corporate, never AI-slop.
-- Do NOT promise scholarships, guarantee recruitment, fake coach quotes, use school/NCAA logos, or overhype Ryval.
+- Do NOT promise scholarships, guarantee recruitment, fake coach quotes, use school/NCAA logos, or overhype.
 - Captions: 1-3 short lines. Hashtags: 6-10, mix niche + broad, no spammy stacks.
 
-IMAGE PROMPTS (CRITICAL):
-- For EACH slide produce a unique imagePrompt that VISUALLY MATCHES that slide's specific text.
-- Dark, premium, cinematic, soccer/recruiting-themed (empty stadium, locker room, training, scouts in stands, paperwork, phone screens, late-night film study, etc.). NO text, NO logos, NO faces close-up, NO school crests. 9:16 composition.
-- Vary subject across slides in the same post — don't repeat the same setting.`;
+IMAGE PROMPTS (CRITICAL — read carefully):
+- For EACH slide produce a UNIQUE imagePrompt that VISUALLY MATCHES that specific slide's text. Never reuse the same scene across slides.
+- Subjects MUST come from the real youth/college soccer + student-athlete world. Pick from: empty college soccer stadium at dusk, sunlit college campus quad, locker room with cleats and kit bags, training ground with cones and balls, weight room / athletic gym, turf field under floodlights at night, scout in stands with clipboard, suburban backyard practice, school hallway with trophy case, dorm room with laptop showing highlight clips, bleachers with parents watching, muddy boots on grass, goalposts at sunrise, team bus, whiteboard with tactics, coach's office with paperwork.
+- Style options (pick whichever fits the slide's mood — vary across slides in the same post): cinematic photographic OR clean flat-vector cartoon illustration OR bold editorial illustration. All in Ryval's premium dark moody palette (deep navy, charcoal, electric accent), 9:16 vertical composition.
+- NO text in image, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic abstract gradients, NO stock-business imagery (no laptops in offices, no handshakes, no suits).
+- The image must clearly connect to what the slide's text is saying — if the slide says "scouts ignore you", show empty bleachers or a lone scout walking away. If it says "grind in silence", show a player training alone at night.`;
+
 
 export const generatePosts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
