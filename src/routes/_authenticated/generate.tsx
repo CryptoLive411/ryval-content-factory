@@ -29,7 +29,7 @@ type DbEnums = Database["public"]["Enums"];
 
 type Mode = "ryval" | "college";
 type ImageEngine = "nano" | "nano-pro";
-type CollegeEngine = "nano-pro";
+type CollegeEngine = "nano" | "nano-pro";
 
 type FormState = {
   slidesPerPost: number;
@@ -159,7 +159,7 @@ function Generate() {
   const [collegeBgs, setCollegeBgs] = useState<(string | null)[]>([]);
   const [collegeStatuses, setCollegeStatuses] = useState<CollegeSlideStatus[]>([]);
   const [collegeAssets, setCollegeAssets] = useState<{ logoUrl: string | null; screenUrl: string | null }>({ logoUrl: null, screenUrl: null });
-  const [collegeEngine, setCollegeEngine] = useState<CollegeEngine>("nano-pro");
+  const [collegeEngine, setCollegeEngine] = useState<CollegeEngine>("nano");
   const [collegeComposed, setCollegeComposed] = useState(false); // true when last render used openai composed mode
 
   // ── Ryval generation
@@ -423,7 +423,8 @@ function Generate() {
               <Select value={collegeEngine} onValueChange={(v) => setCollegeEngine(v as CollegeEngine)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="nano-pro">Nano Banana Pro — reliable photo background + crisp local text</SelectItem>
+                  <SelectItem value="nano">Nano Banana — fastest reliable render</SelectItem>
+                  <SelectItem value="nano-pro">Nano Banana Pro — higher quality, slower</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -444,7 +445,7 @@ function Generate() {
               </Button>
             )}
             <p className="text-xs text-muted-foreground">
-              Nano Banana Pro generates the background photo — Ryval renders the text and export locally.
+              Backgrounds render first; Ryval adds crisp text locally for preview and export.
             </p>
           </div>
 
