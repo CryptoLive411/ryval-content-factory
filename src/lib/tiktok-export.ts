@@ -251,6 +251,7 @@ export async function exportPostForTikTok(opts: {
       total: slides.length,
       bgUrl: s.isCTA ? null : (bgs[s.index] ?? post.bg_image_url ?? null),
       appScreenUrl: post.app_screen_url ?? null,
+      logoUrl: post.logo_url ?? null,
       cta,
     });
     zip.file(`${filenameBase}-slide-${String(i + 1).padStart(2, "0")}.png`, blob);
