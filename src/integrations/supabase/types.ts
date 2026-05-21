@@ -153,8 +153,10 @@ export type Database = {
       posts: {
         Row: {
           account: Database["public"]["Enums"]["account"] | null
+          app_screen_url: string | null
           asset_id: string | null
           audience: Database["public"]["Enums"]["audience"] | null
+          bg_image_url: string | null
           caption: string | null
           category: Database["public"]["Enums"]["category"] | null
           created_at: string
@@ -164,6 +166,7 @@ export type Database = {
           hook: string
           id: string
           is_winner: boolean
+          logo_url: string | null
           notes: string | null
           platform: Database["public"]["Enums"]["platform"] | null
           scheduled_date: string | null
@@ -180,8 +183,10 @@ export type Database = {
         }
         Insert: {
           account?: Database["public"]["Enums"]["account"] | null
+          app_screen_url?: string | null
           asset_id?: string | null
           audience?: Database["public"]["Enums"]["audience"] | null
+          bg_image_url?: string | null
           caption?: string | null
           category?: Database["public"]["Enums"]["category"] | null
           created_at?: string
@@ -191,6 +196,7 @@ export type Database = {
           hook?: string
           id?: string
           is_winner?: boolean
+          logo_url?: string | null
           notes?: string | null
           platform?: Database["public"]["Enums"]["platform"] | null
           scheduled_date?: string | null
@@ -207,8 +213,10 @@ export type Database = {
         }
         Update: {
           account?: Database["public"]["Enums"]["account"] | null
+          app_screen_url?: string | null
           asset_id?: string | null
           audience?: Database["public"]["Enums"]["audience"] | null
+          bg_image_url?: string | null
           caption?: string | null
           category?: Database["public"]["Enums"]["category"] | null
           created_at?: string
@@ -218,6 +226,7 @@ export type Database = {
           hook?: string
           id?: string
           is_winner?: boolean
+          logo_url?: string | null
           notes?: string | null
           platform?: Database["public"]["Enums"]["platform"] | null
           scheduled_date?: string | null
