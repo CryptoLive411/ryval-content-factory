@@ -13,32 +13,62 @@ const Input = z.object({
   ctaType: z.string(),
   includeAppScreen: z.boolean(),
   promptOverride: z.string().optional(),
+  variantIndex: z.number().min(0).max(200).optional(),
 });
+
+// Rotate persona + angle each call so a batch of count:1 generations doesn't repeat.
+const PERSONAS = [
+  { who: "high school player (boys)", pain: "no exposure, can't get coaches to watch film, lost in the recruiting noise" },
+  { who: "high school player (girls)", pain: "fewer scouts, smaller showcase circuit, harder to get evaluated fairly" },
+  { who: "JUCO / transfer player", pain: "tight timeline, limited contacts, fighting the 'late bloomer' label" },
+  { who: "international player trying to reach US college soccer", pain: "no US film, no contacts, visa + NCAA eligibility maze" },
+  { who: "college coach (D1/D2/NAIA)", pain: "drowning in unsolicited emails, can't separate real prospects from spam, recruiting budget is tiny" },
+  { who: "club coach / DOC", pain: "players ask for help but no time to chase every college, hard to track outcomes" },
+  { who: "soccer parent", pain: "spending thousands on showcases with zero clarity on what works, scared of scams" },
+  { who: "former player turned trainer", pain: "great players being missed because no one is packaging their story" },
+];
+const ANGLES = [
+  "expose a specific lie the recruiting industry sells",
+  "break down what coaches actually look at in the first 10 seconds of film",
+  "explain why showcase ROI is collapsing and what to do instead",
+  "show the hidden math of recruiting (rosters, scholarships, walk-on rates)",
+  "tell the truth about emailing coaches — what works, what gets ignored",
+  "explain academic + position + grad-year filters and why most players misuse them",
+  "call out parents who are wasting money on the wrong things",
+  "give the real timeline of recruiting by grade",
+  "compare what top recruits do vs what everyone else does",
+  "explain why your highlight reel is probably hurting you",
+];
 
 const SYSTEM_BASE = `You are Ryval's faceless slideshow content generator.
 
-Ryval is a soccer recruiting app that helps players get discovered by college coaches and helps coaches find players faster (clips, filters, academics, position, grad year, nationality, recruiting signals).
+Ryval is a soccer recruiting app that helps players get discovered by college coaches and helps coaches find players faster (clips, filters, academics, position, grad year, nationality, recruiting signals). BUT: the content you write is NOT a product ad. It is genuinely useful, value-first soccer-recruiting content that earns a follow. Ryval only shows up on the FINAL CTA slide.
 
-NARRATIVE STRUCTURE (mandatory):
-- Slide 1 (hook): Name the PROBLEM bluntly. E.g. "Recruiting is rigged against you."
-- Middle slides: Twist the knife — show WHY it's broken, what people get wrong, what it costs them. Each slide must escalate.
-- Second-to-last slide: Pivot to the SOLUTION / what to do instead. Talk about the solution generically — DO NOT name Ryval yet.
-- CTA slide: This is the ONLY slide where Ryval is named/plugged. Hard call to action tied to the chosen CTA type (waitlist / coming soon / follow).
-- DO NOT mention "Ryval", "the app", "our platform", or any product plug in slides 1 through second-to-last. Those slides must read as pure problem + real-world advice.
-- Every post must move from PROBLEM → ESCALATION → SOLUTION → CTA. No random tip lists.
+WHO YOU SPEAK TO (rotates per post):
+You will be given a specific persona to address (player / coach / parent / trainer / international, etc.). Speak directly to THAT persona. Name their real pain. Do not write generic "players struggle" content.
+
+NARRATIVE STRUCTURE (mandatory, every post):
+- Slide 1 (hook): Name a SPECIFIC problem THIS persona feels. Concrete, blunt, no generalities.
+- Middle slides: Explain WHY it happens, what's broken about the system, what it costs them. Each slide escalates and reveals something they didn't know.
+- Solution slides (the slides right before CTA): Give REAL, ACTIONABLE tips a smart person could act on tomorrow. Not vague ("be better"), not product plugs. Examples: "Lead your email with position, grad year, GPA, club, highlight link — in that order", "Coaches scrub past minute 1:30, put your best clip first", "Cold-email 20 schools that fit your level, not 200 dream schools".
+- CTA slide (LAST ONLY): This is the only slide that mentions Ryval / the app. Tie it to the chosen CTA type (waitlist / coming soon / follow).
+- ABSOLUTE RULE: Slides 1 through second-to-last must NOT mention Ryval, "the app", "our platform", "we built", or any product. They must read like a free, valuable lesson.
+
+DIVERSITY RULE:
+Each post must feel different from any other in the same batch — different persona, different angle, different opening line. Avoid repeating "Recruiting is rigged against you" or any single hook formulation.
 
 WRITING RULES:
 - Max 12 words per slide. Punchy, direct, premium. Each slide reads on its own.
 - Tone: direct, human, confident, useful, slightly intense, premium, modern. Never cheesy, never corporate, never AI-slop.
 - Do NOT promise scholarships, guarantee recruitment, fake coach quotes, use school/NCAA logos, or overhype.
-- Captions: 1-3 short lines. Hashtags: 6-10, mix niche + broad, no spammy stacks.
+- Captions: 1-3 short lines, value-led. Hashtags: 6-10, mix niche + broad, no spammy stacks.
 
 IMAGE PROMPTS (CRITICAL — read carefully):
 - For EACH slide produce a UNIQUE imagePrompt that VISUALLY MATCHES that specific slide's text. Never reuse the same scene across slides.
-- Subjects MUST come from the real youth/college soccer + student-athlete world. Pick from: empty college soccer stadium at dusk, sunlit college campus quad, locker room with cleats and kit bags, training ground with cones and balls, weight room / athletic gym, turf field under floodlights at night, scout in stands with clipboard, suburban backyard practice, school hallway with trophy case, dorm room with laptop showing highlight clips, bleachers with parents watching, muddy boots on grass, goalposts at sunrise, team bus, whiteboard with tactics, coach's office with paperwork.
-- Style options (pick whichever fits the slide's mood — vary across slides in the same post): cinematic photographic OR clean flat-vector cartoon illustration OR bold editorial illustration. All in Ryval's premium dark moody palette (deep navy, charcoal, electric accent), 9:16 vertical composition.
-- NO text in image, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic abstract gradients, NO stock-business imagery (no laptops in offices, no handshakes, no suits).
-- The image must clearly connect to what the slide's text is saying — if the slide says "scouts ignore you", show empty bleachers or a lone scout walking away. If it says "grind in silence", show a player training alone at night.`;
+- Subjects MUST come from the real youth/college soccer + student-athlete + recruiting world. Pick from: empty college soccer stadium at dusk, sunlit college campus quad, locker room with cleats and kit bags, training ground with cones and balls, weight room / athletic gym, turf field under floodlights at night, scout in stands with clipboard, suburban backyard practice, school hallway with trophy case, dorm room with laptop showing highlight clips, bleachers with parents watching, muddy boots on grass, goalposts at sunrise, team bus, whiteboard with tactics, coach's office with paperwork, parent driving to a tournament at dawn, packed showcase sideline.
+- Style options (pick whichever fits the slide's mood — vary across slides in the same post): cinematic photographic OR clean flat-vector cartoon illustration OR bold editorial illustration. All in a premium dark moody palette (deep navy, charcoal, electric accent), 9:16 vertical composition.
+- NO text in image, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic abstract gradients, NO stock-business imagery.
+- The image must clearly connect to what the slide's text is saying.`;
 
 
 export const generatePosts = createServerFn({ method: "POST" })
@@ -93,17 +123,27 @@ export const generatePosts = createServerFn({ method: "POST" })
       },
     };
 
+    const vi = data.variantIndex ?? Math.floor(Math.random() * 1000);
+    const persona = PERSONAS[vi % PERSONAS.length];
+    const angle = ANGLES[vi % ANGLES.length];
+
     const userPrompt = `${data.promptOverride ?? ""}
 Generate ${data.count} faceless slideshow carousel post(s).
+
+THIS POST'S PERSONA (speak directly to them): ${persona.who}
+Their real pain: ${persona.pain}
+THIS POST'S ANGLE: ${angle}
+
 - Platform: ${data.platform}
 - Account: ${data.account}
-- Audience: ${data.audience}
+- Broader audience bucket: ${data.audience}
 - Category: ${data.category}
 - Tone: ${data.tone}
-- CTA type: ${data.ctaType} (the final CTA slide must reflect this — e.g. "Join the waitlist", "Coming soon", "Follow for more")
+- CTA type: ${data.ctaType} (the final CTA slide must reflect this — e.g. "Join the waitlist", "Coming soon", "Follow for more"). The CTA is the ONLY slide that may mention Ryval.
 - Slides per post: ${data.slidesPerPost} (hook + body slides + CTA). Use slide_6 only if slidesPerPost >= 7, otherwise return empty string for slide_6.text and imagePrompt.
 
-Every post MUST follow: problem → escalation → solution → CTA.
+Structure: problem (specific to this persona) → why it's broken → real actionable tips they can use tomorrow → CTA.
+Slides 1 through second-to-last MUST be pure value — no app mention, no product plug.
 Every slide MUST have its own imagePrompt that visually matches its text.
 
 Return strictly via the create_posts tool.`;
