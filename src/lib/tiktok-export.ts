@@ -64,6 +64,7 @@ async function renderSlide(opts: {
   total: number;
   bgUrl: string | null;
   appScreenUrl: string | null;
+  logoUrl: string | null;
   cta: { tag: string; btn: string };
 }): Promise<Blob> {
   const canvas = document.createElement("canvas");
@@ -96,16 +97,31 @@ async function renderSlide(opts: {
     }
   }
 
-  // Header: RYVAL wordmark + index pill
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "700 28px ui-sans-serif, system-ui, -apple-system, Segoe UI, Inter, sans-serif";
-  ctx.textBaseline = "top";
-  ctx.fillText("RYVAL", PAD, PAD);
+  // Header: logo image (or wordmark fallback) + index pill
+  const logoH = 44;
+  if (opts.logoUrl) {
+    const logo = await loadImage(opts.logoUrl);
+    if (logo) {
+      const logoW = logoH * (logo.width / logo.height);
+      ctx.drawImage(logo, PAD, PAD, logoW, logoH);
+    } else {
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 32px ui-sans-serif, system-ui, sans-serif";
+      ctx.textBaseline = "top";
+      ctx.fillText("RYVAL", PAD, PAD + 6);
+    }
+  } else {
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 32px ui-sans-serif, system-ui, sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillText("RYVAL", PAD, PAD + 6);
+  }
   ctx.fillStyle = "rgba(255,255,255,0.65)";
   ctx.font = "600 22px ui-sans-serif, system-ui, sans-serif";
+  ctx.textBaseline = "top";
   const badge = opts.isCTA ? "CTA" : `${opts.index + 1}/${opts.total}`;
   const bw = ctx.measureText(badge).width;
-  ctx.fillText(badge, W - PAD - bw, PAD + 4);
+  ctx.fillText(badge, W - PAD - bw, PAD + 14);
 
   if (opts.isCTA) {
     // App screen mock area (top-center)
@@ -235,6 +251,7 @@ export async function exportPostForTikTok(opts: {
       total: slides.length,
       bgUrl: s.isCTA ? null : (bgs[s.index] ?? post.bg_image_url ?? null),
       appScreenUrl: post.app_screen_url ?? null,
+      logoUrl: post.logo_url ?? null,
       cta,
     });
     zip.file(`${filenameBase}-slide-${String(i + 1).padStart(2, "0")}.png`, blob);
