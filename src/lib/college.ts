@@ -45,82 +45,124 @@ function keyOf(school: string) {
   return school.toLowerCase().replace(/\s+/g, "").replace(/[^a-z]/g, "");
 }
 
-export function buildCollegePost(input: CollegeInput): CollegePost {
+export type CollegeCopy = {
+  nickname?: string;
+  conference?: string;
+  accent_hex?: string;
+  hero_tagline?: string;        // e.g. "BUILT DIFFERENT."
+  hero_accent_word?: string;    // e.g. "DIFFERENT."
+  compete_subline?: string;
+  compete_chips?: { title: string; body: string }[];
+  environment_chips?: { title: string; body: string }[];
+  more_than_chips?: { title: string; body: string }[];
+  cta_subline?: string;
+  caption?: string;
+  hashtags?: string;
+  hero_scene?: string;
+  compete_scene?: string;
+  environment_scene?: string;
+  more_than_scene?: string;
+  cta_scene?: string;
+};
+
+export function buildCollegePost(input: CollegeInput, copy: CollegeCopy = {}): CollegePost {
   const k = keyOf(input.school);
   const preset = SCHOOL_PRESETS[k] ?? {};
   const meta: Required<CollegeInput> = {
     school: input.school.trim(),
     sport: input.sport.trim(),
-    nickname: (input.nickname || preset.nickname || input.school).toUpperCase(),
-    conference: input.conference || preset.conference || "Conference",
-    accent: input.accent || preset.accent || "#1f3fb8",
+    nickname: (input.nickname || copy.nickname || preset.nickname || input.school).toUpperCase(),
+    conference: input.conference || copy.conference || preset.conference || "Conference",
+    accent: input.accent || copy.accent_hex || preset.accent || "#1f3fb8",
   };
   const sportLower = meta.sport.toLowerCase();
   const sportShort = meta.sport.replace(/men's |women's /i, "").trim();
   const eyebrow = `${meta.school.toUpperCase()} ${meta.sport.toUpperCase()}`;
 
-  const landmark = preset.landmark ?? `iconic ${meta.school} campus landmark building at dusk with dramatic warm sunset sky`;
+  const landmark = preset.landmark ?? `the iconic ${meta.school} campus landmark`;
   const stadium = preset.stadium ?? `${meta.school} ${sportShort} stadium`;
+
+  const heroTagline = (copy.hero_tagline || "BUILT DIFFERENT.").toUpperCase();
+  const heroAccent = (copy.hero_accent_word || heroTagline.split(" ").pop() || "DIFFERENT.").toUpperCase();
+
+  const competeChips = copy.compete_chips?.length === 3 ? copy.compete_chips : [
+    { title: "NCAA POWERHOUSE", body: "Consistent national tournament contender." },
+    { title: `${meta.conference.toUpperCase()} COMPETITION`, body: "Competing in one of the toughest conferences." },
+    { title: "PRO PIPELINE", body: "Developing players for the next level." },
+  ];
+  const envChips = copy.environment_chips?.length === 3 ? copy.environment_chips : [
+    { title: "STRENGTH & CONDITIONING", body: "" },
+    { title: "INDOOR TRAINING",         body: "" },
+    { title: "RECOVERY CENTER",         body: "" },
+  ];
+  const moreChips = copy.more_than_chips?.length === 3 ? copy.more_than_chips : [
+    { title: "TOP-TIER ACADEMICS", body: "Consistently ranked among the world's best universities." },
+    { title: "GLOBAL NETWORK",     body: "A powerhouse alumni network that opens doors worldwide." },
+    { title: "LEADERS FOR LIFE",   body: "Developing character, impact, and purpose beyond the field." },
+  ];
+
+  const heroScene = copy.hero_scene
+    ?? `Cinematic photograph of ${landmark} at dusk with deep blue evening sky, warm window glow, lampposts glowing, empty walkway. Clearly recognizable as ${meta.school}.`;
+  const competeScene = copy.compete_scene
+    ?? `Cinematic action photograph of a ${meta.school} ${sportLower} team competing at night under stadium floodlights. Players wearing ${meta.school}'s real primary colors, intense rim lighting, packed student section blurred behind. No readable logos, no recognizable faces.`;
+  const envScene = copy.environment_scene
+    ?? `Cinematic interior photograph of the ${meta.school} ${sportLower} locker room / training facility — premium architectural photography, school colors visible on walls and lockers.`;
+  const moreScene = copy.more_than_scene
+    ?? `Cinematic photograph of students with backpacks walking on a sunlit path on the ${meta.school} campus, shot from behind so no faces are visible. Iconic campus architecture in frame.`;
+  const ctaScene = copy.cta_scene
+    ?? `Cinematic photograph of empty ${stadium} at night, stadium floodlights casting bright pools of light onto the field, deep blue sky.`;
+
+  const noText = " NO text, NO logos, NO school crests, NO trademarks, NO NCAA marks, NO readable signage.";
 
   const slides: CollegeSlide[] = [
     {
       kind: "hero",
       eyebrow,
       title: `${meta.nickname}.`,
-      subline: "BUILT DIFFERENT.",
-      accentWord: "DIFFERENT",
-      imagePrompt: `Cinematic photograph of ${landmark}. Wide vertical composition, deep blue evening sky with warm orange light spilling from windows, lampposts glowing, empty foreground walkway. Magazine quality, ultra sharp, premium college admissions brochure aesthetic. NO text, NO logos.`,
+      subline: heroTagline,
+      accentWord: heroAccent,
+      imagePrompt: `${heroScene} Wide vertical 4:5 composition, magazine quality, ultra sharp, premium college admissions brochure aesthetic.${noText}`,
     },
     {
       kind: "compete",
       eyebrow,
       title: "COMPETE\nHERE.",
-      subline: `${meta.conference.toUpperCase()} STANDARD.`,
-      chips: [
-        { title: "NCAA POWERHOUSE", body: "Consistent national tournament contender." },
-        { title: `${meta.conference.toUpperCase()} COMPETITION`, body: "Competing in one of the toughest conferences." },
-        { title: "PRO PIPELINE", body: "Developing players for the next level." },
-      ],
-      imagePrompt: `Cinematic action photograph of a college ${sportLower} team celebrating a goal at night under stadium floodlights. Players in dark navy and blue striped kits roaring with raw emotion, packed student section blurred in background, sweat and intensity, dramatic rim lighting, deep shadows. Photoreal, ultra sharp, sports photography style. NO text, NO logos, NO school crests, NO recognizable identifiable faces — heads angled or partially shadowed.`,
+      subline: copy.compete_subline || `${meta.conference.toUpperCase()} STANDARD.`,
+      chips: competeChips,
+      imagePrompt: `${competeScene} Photoreal, ultra sharp, sports photography style, dramatic lighting, deep shadows.${noText}`,
     },
     {
       kind: "environment",
       eyebrow,
       title: "ELITE\nENVIRONMENT.",
       subline: "EVERY DETAIL MATTERS.",
-      chips: [
-        { title: "STRENGTH & CONDITIONING", body: "" },
-        { title: "INDOOR TRAINING",         body: "" },
-        { title: "RECOVERY CENTER",         body: "" },
-      ],
-      imagePrompt: `Cinematic interior photograph of an elite college ${sportLower} locker room. Curved layout, dark wood lockers with backlit blue LED accents, leather couches in foreground, trophy case glowing, jerseys hanging in a row, polished floor reflecting moody blue light. Premium professional sports facility, architectural photography, dark navy palette with electric blue glow. NO text, NO logos.`,
+      chips: envChips,
+      imagePrompt: `${envScene} Premium professional sports facility, architectural photography, moody lighting.${noText}`,
     },
     {
       kind: "more_than",
       eyebrow,
       title: `MORE\nTHAN\n${sportShort.toUpperCase()}.`,
       subline: "ELITE ACADEMICS. GLOBAL NETWORK.",
-      chips: [
-        { title: "TOP-TIER ACADEMICS", body: "Consistently ranked among the world's best universities." },
-        { title: "GLOBAL NETWORK",     body: "A powerhouse alumni network that opens doors worldwide." },
-        { title: "LEADERS FOR LIFE",   body: "Developing character, impact, and purpose beyond the field." },
-      ],
-      imagePrompt: `Cinematic photograph of college students with backpacks walking on a sunlit path toward a gothic university tower. Warm golden hour light filtering through trees, lush green lawns, traditional stone architecture. Shot from behind so faces are not visible. Premium university admissions brochure aesthetic. NO text, NO logos, NO recognizable faces.`,
+      chips: moreChips,
+      imagePrompt: `${moreScene} Warm golden hour light, premium university admissions aesthetic.${noText}`,
     },
     {
       kind: "cta",
       eyebrow: "RYVAL",
       title: "YOUR\nNEXT STEP.",
       accentWord: "NEXT STEP.",
-      subline: 'DM "RECRUIT"',
-      imagePrompt: `Cinematic photograph of an empty ${stadium} at night, stadium floodlights casting bright pools of light onto the field, deep blue sky, empty bleachers softly visible. Atmospheric, dramatic, magazine quality. NO text, NO logos, NO recognizable signage.`,
+      subline: copy.cta_subline || 'DM "RECRUIT"',
+      imagePrompt: `${ctaScene} Atmospheric, dramatic, magazine quality.${noText}`,
     },
   ];
 
-  const caption = `${meta.school} ${meta.sport} — built different.\nDM "RECRUIT" to get on the radar.`;
+  const caption = copy.caption
+    || `${meta.school} ${meta.sport} — built different.\nDM "RECRUIT" to get on the radar.`;
   const tag = meta.school.replace(/[^a-z0-9]/gi, "").toLowerCase();
   const sportTag = sportShort.replace(/[^a-z0-9]/gi, "").toLowerCase();
-  const hashtags = `#${tag} #${tag}${sportTag} #college${sportTag} #${sportTag}recruiting #d1${sportTag} #collegerecruiting #ryval`;
+  const hashtags = copy.hashtags
+    || `#${tag} #${tag}${sportTag} #college${sportTag} #${sportTag}recruiting #d1${sportTag} #collegerecruiting #ryval`;
 
   return { meta, slides, caption, hashtags };
 }
