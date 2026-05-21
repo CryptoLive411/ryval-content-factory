@@ -19,8 +19,9 @@ import { CarouselPreview } from "@/components/carousel-preview";
 import { CollegePreview, type CollegeSlideStatus } from "@/components/college-preview";
 import { CATEGORIES, PLATFORMS, ACCOUNTS, AUDIENCES, TONES, CTA_TYPES } from "@/lib/ryval";
 import { exportPostForTikTok } from "@/lib/tiktok-export";
-import { buildCollegePost, type CollegePost } from "@/lib/college";
+import { buildCollegePost, buildComposedPrompt, type CollegePost } from "@/lib/college";
 import { exportCollegePost } from "@/lib/college-export";
+import JSZip from "jszip";
 
 export const Route = createFileRoute("/_authenticated/generate")({ component: Generate });
 
@@ -28,6 +29,7 @@ type DbEnums = Database["public"]["Enums"];
 
 type Mode = "ryval" | "college";
 type ImageEngine = "nano" | "nano-pro";
+type CollegeEngine = "openai" | "nano-pro";
 
 type FormState = {
   slidesPerPost: number;
@@ -157,6 +159,8 @@ function Generate() {
   const [collegeBgs, setCollegeBgs] = useState<(string | null)[]>([]);
   const [collegeStatuses, setCollegeStatuses] = useState<CollegeSlideStatus[]>([]);
   const [collegeAssets, setCollegeAssets] = useState<{ logoUrl: string | null; screenUrl: string | null }>({ logoUrl: null, screenUrl: null });
+  const [collegeEngine, setCollegeEngine] = useState<CollegeEngine>("openai");
+  const [collegeComposed, setCollegeComposed] = useState(false); // true when last render used openai composed mode
 
   // ── Ryval generation
   const ryvalMut = useMutation({
@@ -212,12 +216,22 @@ function Generate() {
 
       toast.success(`${built.meta.school} ${built.meta.sport} — rendering 5 slides…`);
 
+      const useComposed = collegeEngine === "openai";
+      setCollegeComposed(useComposed);
+
       let fails = 0;
       for (let i = 0; i < built.slides.length; i++) {
         setCollegeStatuses(prev => prev.map((s, idx) => idx === i ? "loading" : s));
         try {
+          const prompt = useComposed
+            ? buildComposedPrompt(built.slides[i], built.meta)
+            : built.slides[i].imagePrompt;
           const { url } = await withRetry(
-            () => genBg({ data: { prompt: built.slides[i].imagePrompt, model: "nano-pro", stylePreset: "college" } }),
+            () => genBg({ data: {
+              prompt,
+              model: collegeEngine,
+              stylePreset: useComposed ? "college-composed" : "college",
+            } }),
             3,
           );
           setCollegeBgs(prev => { const n = [...prev]; n[i] = url; return n; });
@@ -238,8 +252,16 @@ function Generate() {
     if (!collegePost) return;
     setCollegeStatuses(prev => prev.map((s, i) => i === idx ? "loading" : s));
     try {
+      const useComposed = collegeComposed;
+      const prompt = useComposed
+        ? buildComposedPrompt(collegePost.slides[idx], collegePost.meta)
+        : collegePost.slides[idx].imagePrompt;
       const { url } = await withRetry(
-        () => genBg({ data: { prompt: collegePost.slides[idx].imagePrompt, model: "nano-pro", stylePreset: "college" } }),
+        () => genBg({ data: {
+          prompt,
+          model: useComposed ? "openai" : "nano-pro",
+          stylePreset: useComposed ? "college-composed" : "college",
+        } }),
         3,
       );
       setCollegeBgs(prev => { const n = [...prev]; n[idx] = url; return n; });
@@ -254,13 +276,34 @@ function Generate() {
     if (!collegePost) return;
     const slug = `${collegePost.meta.school}-${collegePost.meta.sport}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     try {
-      await exportCollegePost({
-        post: collegePost,
-        bgImages: collegeBgs,
-        logoUrl: collegeAssets.logoUrl,
-        appScreenUrl: collegeAssets.screenUrl,
-        filenameBase: slug,
-      });
+      if (collegeComposed) {
+        // OpenAI composed slides — images already contain everything. Just zip them.
+        const zip = new JSZip();
+        for (let i = 0; i < collegeBgs.length; i++) {
+          const url = collegeBgs[i];
+          if (!url) continue;
+          const blob = await fetch(url).then(r => r.blob());
+          zip.file(`${slug}-slide-${String(i + 1).padStart(2, "0")}.png`, blob);
+        }
+        zip.file("caption.txt", `${collegePost.caption}\n\n${collegePost.hashtags}\n`);
+        const out = await zip.generateAsync({ type: "blob" });
+        const dl = URL.createObjectURL(out);
+        const a = document.createElement("a");
+        a.href = dl;
+        a.download = `${slug}-tiktok.zip`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(dl), 1000);
+      } else {
+        await exportCollegePost({
+          post: collegePost,
+          bgImages: collegeBgs,
+          logoUrl: collegeAssets.logoUrl,
+          appScreenUrl: collegeAssets.screenUrl,
+          filenameBase: slug,
+        });
+      }
       toast.success("Pack downloaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export failed");
@@ -375,6 +418,16 @@ function Generate() {
               <Label>Accent color hex <span className="text-muted-foreground text-xs">(optional)</span></Label>
               <Input value={collegeForm.accent} onChange={e => setCollegeForm(f => ({ ...f, accent: e.target.value }))} placeholder="#1f3fb8" />
             </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Image engine</Label>
+              <Select value={collegeEngine} onValueChange={(v) => setCollegeEngine(v as CollegeEngine)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openai">OpenAI gpt-image-1 — full composed slides (best for stats + emojis)</SelectItem>
+                  <SelectItem value="nano-pro">Nano Banana Pro — photo background only (we overlay text)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 mb-2">
             <Button
@@ -392,9 +445,12 @@ function Generate() {
               </Button>
             )}
             <p className="text-xs text-muted-foreground">
-              College mode uses Nano Banana Pro for photoreal output.
+              {collegeEngine === "openai"
+                ? "OpenAI bakes text, stats, and emojis directly into the image (~30s/slide, ~$0.20 each)."
+                : "Nano Banana Pro generates the background photo only — we render text on top."}
             </p>
           </div>
+
 
           {collegePost && (
             <div className="mt-8 space-y-4">
@@ -402,14 +458,37 @@ function Generate() {
                 <h3 className="font-bold text-lg">{collegePost.meta.school} {collegePost.meta.sport}</h3>
                 <span className="text-xs text-muted-foreground">{collegeStatuses.filter(s => s === "done").length}/{collegePost.slides.length} rendered</span>
               </div>
-              <CollegePreview
-                post={collegePost}
-                bgImages={collegeBgs}
-                statuses={collegeStatuses}
-                logoUrl={collegeAssets.logoUrl}
-                appScreenUrl={collegeAssets.screenUrl}
-                onRetry={retryCollegeSlide}
-              />
+              {collegeComposed ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {collegePost.slides.map((_, i) => {
+                    const url = collegeBgs[i];
+                    const status = collegeStatuses[i];
+                    return (
+                      <div key={i} className="aspect-[4/5] rounded-lg overflow-hidden border border-border relative bg-[#05080f]">
+                        {url && <img src={url} alt={`slide ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />}
+                        {status !== "done" && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            {status === "loading" && <Loader2 className="size-5 animate-spin text-white/70" />}
+                            {status === "pending" && <span className="text-[10px] text-white/60 uppercase tracking-wider">Queued</span>}
+                            {status === "failed" && (
+                              <button onClick={() => retryCollegeSlide(i)} className="text-[10px] text-red-300 underline">Retry</button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <CollegePreview
+                  post={collegePost}
+                  bgImages={collegeBgs}
+                  statuses={collegeStatuses}
+                  logoUrl={collegeAssets.logoUrl}
+                  appScreenUrl={collegeAssets.screenUrl}
+                  onRetry={retryCollegeSlide}
+                />
+              )}
               <div className="text-sm text-muted-foreground space-y-1">
                 <p className="whitespace-pre-line"><span className="text-foreground font-medium">Caption:</span> {collegePost.caption}</p>
                 <p className="text-primary">{collegePost.hashtags}</p>

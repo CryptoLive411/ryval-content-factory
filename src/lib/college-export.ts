@@ -198,17 +198,17 @@ async function renderSlide(
     if (slide.subline) drawSubline(ctx, slide.subline, after + 24, accent);
   } else if (slide.kind === "cta") {
     // Hero-style title left, app screen mock right
-    const titleSize = 170;
-    drawDisplayTitle(ctx, slide.title, slide.accentWord, accent, 220, titleSize);
-    if (slide.subline) drawSubline(ctx, slide.subline, 220 + titleSize * 2 + 24, accent);
+    const titleSize = 130;
+    const titleY = 280;
+    const after = drawDisplayTitle(ctx, slide.title, slide.accentWord, accent, titleY, titleSize);
+    if (slide.subline) drawSubline(ctx, slide.subline, after + 24, accent);
     if (appScreenUrl) {
       const img = await loadImage(appScreenUrl);
       if (img) {
-        const phoneW = 380;
+        const phoneW = 360;
         const phoneH = Math.round(phoneW * (img.height / img.width));
         const phoneX = W - PAD - phoneW;
-        const phoneY = 320;
-        // rounded clip
+        const phoneY = Math.round((H - phoneH) / 2);
         const rr = 32;
         ctx.save();
         ctx.beginPath();
