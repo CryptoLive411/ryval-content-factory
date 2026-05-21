@@ -418,6 +418,16 @@ function Generate() {
               <Label>Accent color hex <span className="text-muted-foreground text-xs">(optional)</span></Label>
               <Input value={collegeForm.accent} onChange={e => setCollegeForm(f => ({ ...f, accent: e.target.value }))} placeholder="#1f3fb8" />
             </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Image engine</Label>
+              <Select value={collegeEngine} onValueChange={(v) => setCollegeEngine(v as CollegeEngine)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openai">OpenAI gpt-image-1 — full composed slides (best for stats + emojis)</SelectItem>
+                  <SelectItem value="nano-pro">Nano Banana Pro — photo background only (we overlay text)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 mb-2">
             <Button
@@ -435,9 +445,12 @@ function Generate() {
               </Button>
             )}
             <p className="text-xs text-muted-foreground">
-              College mode uses Nano Banana Pro for photoreal output.
+              {collegeEngine === "openai"
+                ? "OpenAI bakes text, stats, and emojis directly into the image (~30s/slide, ~$0.20 each)."
+                : "Nano Banana Pro generates the background photo only — we render text on top."}
             </p>
           </div>
+
 
           {collegePost && (
             <div className="mt-8 space-y-4">
