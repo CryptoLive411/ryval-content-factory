@@ -169,6 +169,7 @@ async function fetchBrandAssets() {
 function Generate() {
   const generate = useServerFn(generatePosts);
   const genBg = useServerFn(generateBackground);
+  const genCollegeCopy = useServerFn(generateCollegeCopy);
 
   const [mode, setMode] = useState<Mode>("ryval");
   const [imageEngine, setImageEngine] = useState<ImageEngine>("nano");
