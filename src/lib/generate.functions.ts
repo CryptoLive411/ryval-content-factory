@@ -287,6 +287,95 @@ Return strictly via the create_posts tool.`;
     return { posts: enriched };
   });
 
+// ──────────────────────────────── College copy (school-specific) ────────────────────────────────
+export const generateCollegeCopy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        school: z.string().min(1).max(120),
+        sport: z.string().min(1).max(80),
+        conference: z.string().max(80).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+
+    const tool = {
+      type: "function",
+      function: {
+        name: "create_college_copy",
+        description: "Return school-specific recruiting slide copy and image scene descriptions.",
+        parameters: {
+          type: "object",
+          properties: {
+            nickname: { type: "string", description: "Short uppercase nickname e.g. HARVARD, CRIMSON" },
+            conference: { type: "string", description: "Athletic conference, e.g. Ivy League, ACC" },
+            accent_hex: { type: "string", description: "School primary color hex, e.g. #A41034 for Harvard crimson" },
+            hero_tagline: { type: "string", description: "Short 2-3 word tagline after the nickname, e.g. BUILT DIFFERENT, EARNED HERE, ALWAYS FORWARD. Must end with a period." },
+            hero_accent_word: { type: "string", description: "Which trailing word of hero_tagline to color in accent (e.g. DIFFERENT.)" },
+            compete_subline: { type: "string", description: "All-caps short subline, e.g. IVY LEAGUE STANDARD." },
+            compete_chips: {
+              type: "array", minItems: 3, maxItems: 3,
+              items: { type: "object", properties: { title: { type: "string" }, body: { type: "string" } }, required: ["title", "body"], additionalProperties: false },
+              description: "3 chips with REAL, specific stats/facts about this school's program (titles, body 6-10 words). Mention real notable accomplishments if you know them; otherwise stay specific but truthful (e.g. conference standing, alumni who went pro, championship history).",
+            },
+            environment_chips: {
+              type: "array", minItems: 3, maxItems: 3,
+              items: { type: "object", properties: { title: { type: "string" }, body: { type: "string" } }, required: ["title", "body"], additionalProperties: false },
+              description: "3 facility/training chips specific to this school (stadium name, training facilities, weight room, etc.)",
+            },
+            more_than_chips: {
+              type: "array", minItems: 3, maxItems: 3,
+              items: { type: "object", properties: { title: { type: "string" }, body: { type: "string" } }, required: ["title", "body"], additionalProperties: false },
+              description: "3 academic/network chips specific to this school's reputation (ranking, alumni network, region).",
+            },
+            cta_subline: { type: "string", description: 'Final CTA subline, e.g. DM "RECRUIT"' },
+            caption: { type: "string", description: "Short TikTok caption, 1-2 lines, mentions the school+sport. Do not stuff." },
+            hashtags: { type: "string", description: "8-12 space-separated hashtags, mix school + sport + recruiting tags. Include school-specific tags." },
+            hero_scene: { type: "string", description: `Photoreal scene description for HERO slide background — must clearly be ${data.school}: iconic campus landmark, named building if you know one, dusk lighting. No text, no logos.` },
+            compete_scene: { type: "string", description: `Photoreal action scene of ${data.school} ${data.sport} players competing. Use the school's actual primary uniform colors. No readable logos, no recognizable faces.` },
+            environment_scene: { type: "string", description: `Photoreal interior of ${data.school} ${data.sport} facility / locker room / training ground. School colors visible. No text or logos.` },
+            more_than_scene: { type: "string", description: `Photoreal scene of ${data.school} campus academic life — students walking past a named iconic building if you know one. Shot from behind so no faces.` },
+            cta_scene: { type: "string", description: `Photoreal empty ${data.school} ${data.sport} stadium/field at night under floodlights. If you know the stadium name, evoke it. No text or logos.` },
+          },
+          required: ["nickname", "conference", "accent_hex", "hero_tagline", "hero_accent_word", "compete_subline", "compete_chips", "environment_chips", "more_than_chips", "cta_subline", "caption", "hashtags", "hero_scene", "compete_scene", "environment_scene", "more_than_scene", "cta_scene"],
+          additionalProperties: false,
+        },
+      },
+    };
+
+    const userPrompt = `Generate UNIQUE, school-specific recruiting carousel copy for:
+- School: ${data.school}
+- Sport: ${data.sport}
+- Conference (if provided): ${data.conference ?? "(infer)"}
+
+Use REAL knowledge about this school and program when you have it: actual conference, real primary color, named campus buildings, real stadium/arena names, accurate academic reputation. Stats/facts must be specific and plausible — never the same generic "NCAA POWERHOUSE / PRO PIPELINE" filler. Make each generation feel hand-written for this exact school. Return strictly via the tool.`;
+
+    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: "You write premium, school-specific college recruiting social copy. You know real facts about US colleges and their athletic programs. Never use generic filler." },
+          { role: "user", content: userPrompt },
+        ],
+        tools: [tool],
+        tool_choice: { type: "function", function: { name: "create_college_copy" } },
+      }),
+    });
+    if (r.status === 429) throw new Error("Rate limit. Wait a moment.");
+    if (r.status === 402) throw new Error("AI credits exhausted.");
+    if (!r.ok) throw new Error(`AI gateway error (${r.status})`);
+    const j = await r.json();
+    const call = j.choices?.[0]?.message?.tool_calls?.[0];
+    if (!call) throw new Error("No tool call returned");
+    return JSON.parse(call.function.arguments);
+  });
+
 // One short call per slide, fired sequentially from the client.
 export const generateBackground = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
