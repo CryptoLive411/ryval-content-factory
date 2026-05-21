@@ -1,101 +1,63 @@
-## Goal
+# Plan
 
-Turn Ryval into a hands-off TikTok content engine: every 8 hours, the system generates a new post, builds the slides, and publishes it directly to your TikTok account. No approval step. You only step in if you want to pause the queue or change the cadence.
+## 1. Strip the app down to just "Generate"
 
----
+Remove from the sidebar + mobile menu + route tree:
+- Dashboard, Library, Planner, Templates, Performance, Prompts, Assets, Settings
 
-## What you'll get
+Keep:
+- `/generate` (becomes the home route after login)
+- `/login` and auth flow
 
-- A new **Autopilot** page in the app where you:
-  - Connect your TikTok account (one-click OAuth)
-  - Set the active "preset" (audience, category, tone, CTA, slidesPerPost) the bot uses
-  - See the upcoming schedule, a live feed of what was posted, and any failures
-  - One big **Pause / Resume** switch
-- A background job that runs every 8 hours and does the full pipeline end-to-end
-- All posts also land in your Library so you can browse history
+Delete the unused route files so they can't be reached by URL either.
 
----
+## 2. Two generation modes on the Generate page
 
-## How the automation flows
+Add a top-level **Mode** toggle:
 
-```text
-pg_cron (every 8h)
-   └─> POST /api/public/hooks/autopilot-tick
-         ├─ 1. Pick the active preset for the user
-         ├─ 2. generatePosts(count: 1)          ← reuses existing AI pipeline
-         ├─ 3. Render 1080x1350 PNGs           ← reuses tiktok-export logic, server-side
-         ├─ 4. Upload PNGs to Supabase Storage (assets bucket, public)
-         ├─ 5. TikTok Content Posting API:
-         │     PHOTO carousel via PULL_FROM_URL
-         │     post_mode: DIRECT_POST
-         ├─ 6. Insert row in posts (status: 'posted') + autopilot_runs log
-         └─ 7. On failure: log + mark run failed, do not retry the same content
-```
+**Mode A — Ryval brand posts** (what we have today)
+- Exactly the existing flow (hooks, slides, CTA, generated backgrounds).
+- Only change: generate **1 post at a time** instead of batches of 2.
 
-The cron job is the only trigger — no client involvement, no laptop required.
+**Mode B — College Recruiting posts** (new — like the Duke set you sent)
+- Single input: **School + Sport** (e.g. "Duke Men's Soccer"). Optional: team color hex, mascot, conference, stadium name (auto-filled with sensible defaults from the school name if blank).
+- Generates **one 5-slide post** in the exact Duke format:
+  1. **Hero / "[SCHOOL]. BUILT DIFFERENT."** — campus landmark photo, school name huge, tagline
+  2. **"COMPETE HERE." / [Conference] STANDARD** — team celebration photo + 3 stat chips (NCAA, conference, pro pipeline)
+  3. **"ELITE ENVIRONMENT." / Every detail matters** — locker room / facilities photo + 3 sub-facility thumbnails
+  4. **"MORE THAN [SPORT]."** — campus walking photo + 3 academic chips
+  5. **"YOUR NEXT STEP." / DM "RECRUIT"** — Ryval app screen mock on stadium background
+- All slides 1080×1350, same typographic system as the reference (huge condensed display type, blue accent rule, small uppercase eyebrow, Ryval logo top-right).
+- Per-school theme color (default Duke blue `#1f3fb8`); slides pull from school name automatically.
+- 1 post at a time. Each render produces a downloadable TikTok zip identical between Mac and phone.
 
----
+## 3. Reliable image rendering
 
-## Pieces to build
+Two reasons images failed before: gateway hiccups and no retry. Fix:
+- **Retry with backoff** on each image: up to 3 attempts (500ms / 1.5s / 3s).
+- **Sequential, not parallel**, when in "1 at a time" mode — avoids rate limits.
+- Show per-slide status (✓ / spinner / ✗ Retry button) so you can re-run just the failed ones without regenerating the whole post.
+- If a background still fails after 3 tries, fall back to a tasteful gradient so the slide is still exportable.
 
-### 1. TikTok connection
-- Use the **TikTok connector** (`standard_connectors--connect`, connector_id `tiktok`)
-- Required scopes for direct posting: `user.info.basic`, `video.publish`, `video.upload`, plus the photo-posting scope
-- The connector gateway handles token refresh automatically; we just call `https://connector-gateway.lovable.dev/tiktok/post/publish/content/init/`
+## 4. OpenAI option for college imagery
 
-### 2. Database
-New tables (RLS scoped to `auth.uid()`):
-- `autopilot_settings` — one row per user: `is_active`, `cadence_cron` (default `0 */8 * * *`), `preset_json` (audience/category/tone/cta/slides), `tiktok_connected_at`
-- `autopilot_runs` — one row per cron tick: `status` (`queued|generated|rendered|posted|failed`), `post_id`, `tiktok_publish_id`, `error`, `started_at`, `finished_at`
+College photos (campus landmarks, locker rooms, stadiums) need to look photoreal — that's where Nano Banana sometimes underperforms. Add a small **Image engine** selector on the Generate page:
 
-### 3. Server route: `/api/public/hooks/autopilot-tick`
-- Authenticated via `apikey` header (Supabase anon key) — standard pg_cron pattern
-- For each user with `is_active = true`:
-  1. Call existing `generatePosts` logic (extracted into a shared helper so both the UI server fn and the cron route can use it)
-  2. Render each slide to PNG on the server using `node-canvas`-compatible code OR reuse `@napi-rs/canvas` (Worker-compatible). If canvas isn't viable in the Worker runtime, we render via the Lovable AI image model directly (skip the HTML-canvas path entirely for the autopilot lane).
-  3. Upload PNGs to the `assets` storage bucket → get public URLs
-  4. POST to TikTok `post/publish/content/init/` with `media_type: PHOTO`, `post_mode: DIRECT_POST`, `photo_images: [urls]`, `title: caption + hashtags`
-  5. Persist results
+- **Nano Banana** (Google, current default — fastest/cheapest)
+- **Nano Banana Pro** (higher quality, slower, ~5–10× cost)
+- **OpenAI GPT-Image** *(requires an OpenAI API key — I'll prompt for it when first selected)*
 
-### 4. pg_cron schedule
-```sql
-select cron.schedule(
-  'ryval-autopilot-8h',
-  '0 */8 * * *',
-  $$ select net.http_post(
-       url := 'https://project--5230a4cc-e56d-46a8-affd-eaedaa29562d.lovable.app/api/public/hooks/autopilot-tick',
-       headers := '{"Content-Type":"application/json","apikey":"<ANON_KEY>"}'::jsonb,
-       body := '{}'::jsonb
-     ) $$
-);
-```
+The college mode will default to **Nano Banana Pro** because photoreal stadium / Gothic-tower shots benefit from it; brand-post mode stays on regular Nano Banana.
 
-### 5. UI: `/autopilot` route
-- "Connect TikTok" button → triggers connector flow
-- Preset form (re-uses the Generate page form fields)
-- Active toggle + Pause button
-- Table of last 30 runs with status, posted-at, link to TikTok post, error message if any
+## 5. Cleanup
+
+- Update sidebar + mobile sheet to only show "Generate".
+- Make `/` redirect to `/generate` when signed in.
+- Remove unused DB read code from removed pages but leave the `posts` table alone (still used for save-to-library inside generate, just no library page — we can add a simple "Recent" list inline on Generate so you don't lose history).
 
 ---
 
-## Important constraints to know up front
+## Questions before I build
 
-1. **TikTok app approval.** TikTok's Content Posting API has two modes:
-   - *Unaudited app* → posts go to your TikTok inbox as a **draft** you tap "Post" on. Still 95% automated, but not zero-touch.
-   - *Audited app* → true `DIRECT_POST`, fully hands-off. Requires submitting the app for TikTok review (typically 1–3 weeks).
-   The Lovable TikTok connector currently runs against an unaudited app surface, so realistically **the first version ships as "auto-drafts to your TikTok inbox, one tap to publish"**. We'll wire `DIRECT_POST` so the moment the app is audited it flips to truly hands-off with zero code change.
-
-2. **Image rendering on the server.** The current export uses browser Canvas. The cron route runs on Cloudflare Workers (no browser). We have two options:
-   - Use `@napi-rs/canvas` or `skia-canvas` — may not work on Workers
-   - Recommended fallback: generate the slide images with the Lovable AI image model (Nano Banana 2) using the slide text + scene prompt we already produce. This is what the Generate page already does for backgrounds; we extend it to render the full composed slide. Slightly different visual style than the in-app preview, but zero runtime risk.
-
-3. **Cost.** 3 posts/day × 7 slides × image generation ≈ ~630 Lovable AI image calls/month + the text generation. Watch the credit balance; we'll surface it in the Autopilot page.
-
-4. **TikTok rate limits.** 3/day is well under TikTok's posting limits, no issue.
-
----
-
-## What I need from you before building
-
-- Confirm: ship the "auto-draft to TikTok inbox" version now, and we flip to true `DIRECT_POST` once you submit the app for TikTok audit? (This is the only way to actually start running this week.)
-- Confirm the initial preset (audience / category / tone / CTA / slides per post) the bot should use, or I'll mirror whatever you used in your last Generate run.
+1. For College mode, do you want a **dropdown of preset schools** (Duke, UNC, Stanford, etc. with logos + colors pre-loaded) or just a **free-text school name** input that auto-infers everything from the name?
+2. Want me to wire up **OpenAI GPT-Image** now (you'd paste your OpenAI key), or just default to **Nano Banana Pro** for college mode and skip OpenAI for now?
