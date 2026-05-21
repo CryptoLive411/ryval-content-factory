@@ -157,6 +157,7 @@ export type Database = {
           asset_id: string | null
           audience: Database["public"]["Enums"]["audience"] | null
           bg_image_url: string | null
+          bg_images: string[]
           caption: string | null
           category: Database["public"]["Enums"]["category"] | null
           created_at: string
@@ -187,6 +188,7 @@ export type Database = {
           asset_id?: string | null
           audience?: Database["public"]["Enums"]["audience"] | null
           bg_image_url?: string | null
+          bg_images?: string[]
           caption?: string | null
           category?: Database["public"]["Enums"]["category"] | null
           created_at?: string
@@ -217,6 +219,7 @@ export type Database = {
           asset_id?: string | null
           audience?: Database["public"]["Enums"]["audience"] | null
           bg_image_url?: string | null
+          bg_images?: string[]
           caption?: string | null
           category?: Database["public"]["Enums"]["category"] | null
           created_at?: string
