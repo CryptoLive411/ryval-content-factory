@@ -16,17 +16,54 @@ import { CATEGORIES, PLATFORMS, ACCOUNTS, AUDIENCES, TONES, CTA_TYPES } from "@/
 
 export const Route = createFileRoute("/_authenticated/generate")({ component: Generate });
 
+type FormState = {
+  count: number;
+  slidesPerPost: number;
+  platform: string;
+  account: string;
+  audience: string;
+  category: string;
+  tone: string;
+  ctaType: string;
+  includeAppScreen: boolean;
+};
+
+type GeneratedPost = {
+  hook?: string | null;
+  slide_2?: string | null;
+  slide_3?: string | null;
+  slide_4?: string | null;
+  slide_5?: string | null;
+  slide_6?: string | null;
+  cta?: string | null;
+  caption?: string | null;
+  hashtags?: string | null;
+  slide_image_prompts?: string[];
+  bg_images?: (string | null)[];
+  bg_image_url?: string | null;
+  logo_url?: string | null;
+  app_screen_url?: string | null;
+  cta_type?: string | null;
+};
+
+type SelectOption = { value: string; label: string } | string;
+
 function Generate() {
   const qc = useQueryClient();
   const generate = useServerFn(generatePosts);
   const genBg = useServerFn(generateBackground);
-  const [form, setForm] = useState({
-    count: 5, slidesPerPost: 5,
-    platform: "tiktok", account: "recruiting_truth",
-    audience: "players", category: "harsh_truths",
-    tone: "direct", ctaType: "join waitlist", includeAppScreen: true,
+  const [form, setForm] = useState<FormState>({
+    count: 5,
+    slidesPerPost: 5,
+    platform: "tiktok",
+    account: "recruiting_truth",
+    audience: "players",
+    category: "harsh_truths",
+    tone: "direct",
+    ctaType: "join waitlist",
+    includeAppScreen: true,
   });
-  const [generated, setGenerated] = useState<Array<Record<string, any>>>([]);
+  const [generated, setGenerated] = useState<GeneratedPost[]>([]);
 
   const mut = useMutation({
     mutationFn: async () => {
