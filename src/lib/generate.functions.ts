@@ -195,7 +195,7 @@ export const generateBackground = createServerFn({ method: "POST" })
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-image",
-        messages: [{ role: "user", content: `${data.prompt}. Vertical 9:16 composition. Cinematic, moody, premium editorial. NO text. NO logos. NO school crests.` }],
+        messages: [{ role: "user", content: `${data.prompt}\n\nStyle: premium soccer / student-athlete world — real settings like college campuses, soccer fields, locker rooms, athletic gyms, training grounds, stadiums, dorm rooms, bleachers. Either cinematic photographic OR clean flat-vector cartoon illustration OR bold editorial illustration — pick whatever best fits the scene. Dark moody palette: deep navy, charcoal, with a single electric accent. Vertical 9:16 composition. Strong subject, clear focal point. NO text, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic gradients, NO corporate stock imagery (no suits, no boardrooms, no handshakes).` }],
         modalities: ["image", "text"],
       }),
     });
