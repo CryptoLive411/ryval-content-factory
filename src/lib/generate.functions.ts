@@ -320,17 +320,17 @@ export const generateCollegeCopy = createServerFn({ method: "POST" })
             compete_chips: {
               type: "array", minItems: 3, maxItems: 3,
               items: { type: "object", properties: { title: { type: "string" }, body: { type: "string" } }, required: ["title", "body"], additionalProperties: false },
-              description: "3 chips with REAL, specific stats/facts about this school's program (titles, body 6-10 words). Mention real notable accomplishments if you know them; otherwise stay specific but truthful (e.g. conference standing, alumni who went pro, championship history).",
+              description: "3 chips with REAL, SPECIFIC, NUMERIC stats about this school's program. Title is a short uppercase stat headline (e.g. '17 NCAA TOURNAMENTS', '4 NATIONAL TITLES', '38 PROS DEVELOPED'). Body is one factual 6-12 word sentence with a year, number, or named accomplishment. NEVER use generic filler like 'NCAA POWERHOUSE' or 'PRO PIPELINE'. If unsure of an exact number, pick a plausible specific one and phrase it accurately for this program.",
             },
             environment_chips: {
               type: "array", minItems: 3, maxItems: 3,
               items: { type: "object", properties: { title: { type: "string" }, body: { type: "string" } }, required: ["title", "body"], additionalProperties: false },
-              description: "3 facility/training chips specific to this school (stadium name, training facilities, weight room, etc.)",
+              description: "3 chips naming the school's ACTUAL facilities by name (e.g. 'KOSKINEN STADIUM', 'YEARDLEY LOVE CENTER', 'JOHN A. BLACKBURN INSTITUTE'). Body: short 6-10 word factual line about that facility.",
             },
             more_than_chips: {
               type: "array", minItems: 3, maxItems: 3,
               items: { type: "object", properties: { title: { type: "string" }, body: { type: "string" } }, required: ["title", "body"], additionalProperties: false },
-              description: "3 academic/network chips specific to this school's reputation (ranking, alumni network, region).",
+              description: "3 academic chips with REAL specifics: world ranking number, famous alumni name, named program (e.g. '#3 US NEWS RANKING', '162 RHODES SCHOLARS', 'WHARTON / FUQUA / ROSS pipeline'). Numeric / named, never generic.",
             },
             cta_subline: { type: "string", description: 'Final CTA subline, e.g. DM "RECRUIT"' },
             caption: { type: "string", description: "Short TikTok caption, 1-2 lines, mentions the school+sport. Do not stuff." },
