@@ -64,15 +64,12 @@ function DraftCard({ post, index }: { post: GeneratedPost; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const onDownload = async () => {
-    if (!ref.current) return;
     setBusy(true);
     try {
-      const root = ref.current.querySelector<HTMLElement>("[data-carousel-root]");
-      if (!root) throw new Error("Preview not ready");
       const slug = (post.hook ?? `post-${index + 1}`)
         .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || `post-${index + 1}`;
       await exportPostForTikTok({
-        container: root,
+        post,
         caption: post.caption ?? "",
         hashtags: post.hashtags ?? "",
         filenameBase: slug,
