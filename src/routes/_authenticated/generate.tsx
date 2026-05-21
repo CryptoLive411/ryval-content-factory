@@ -19,7 +19,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { CarouselPreview } from "@/components/carousel-preview";
 import { CATEGORIES, PLATFORMS, ACCOUNTS, AUDIENCES, TONES, CTA_TYPES } from "@/lib/ryval";
-import { exportPostForTikTok } from "@/lib/tiktok-export";
+import { exportPostForTikTok, renderPostSlideUrls } from "@/lib/tiktok-export";
 
 export const Route = createFileRoute("/_authenticated/generate")({ component: Generate });
 
