@@ -168,12 +168,17 @@ function Generate() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Save failed"),
   });
 
-  const sel = (label: string, key: keyof FormState, opts: ReadonlyArray<SelectOption>) => (
+  const sel = (label: string, key: SelectKey, opts: ReadonlyArray<SelectOption>) => (
     <div className="space-y-2">
       <Label>{label}</Label>
       <Select
         value={String(form[key])}
-        onValueChange={(v) => setForm((f) => ({ ...f, [key]: isNaN(Number(v)) ? v : Number(v) }))}
+        onValueChange={(v) =>
+          setForm((f) => ({
+            ...f,
+            [key]: typeof f[key] === "number" ? Number(v) : v,
+          }))
+        }
       >
         <SelectTrigger>
           <SelectValue />
