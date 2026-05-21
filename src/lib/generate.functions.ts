@@ -376,6 +376,52 @@ Use REAL knowledge about this school and program when you have it: actual confer
     return JSON.parse(call.function.arguments);
   });
 
+// ──────────────────────────────── School crest / logo generation ────────────────────────────────
+export const generateSchoolLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        school: z.string().min(1).max(120),
+        accent: z.string().min(3).max(20),
+        motif: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+
+    const prompt = `Original athletic monogram crest INSPIRED BY ${data.school}'s color identity and traditional collegiate motif (${data.motif ?? "shield with bold serif letterform"}). Clean vector-style emblem, centered, on a SOLID WHITE BACKGROUND, premium college sports branding aesthetic. Primary color: ${data.accent}. Add a tasteful secondary tone (white / cream / black) for depth. Bold, simple, instantly readable at small sizes — like a varsity team patch. Symmetrical, sharp edges, no gradients, no photographic textures, no 3D, no busy details. ABSOLUTELY NO real trademarks, NO existing school crests, NO NCAA marks, NO copyrighted logos. Do not include any text other than (optionally) a single bold initial letter. Square 1:1 composition with generous padding around the emblem.`;
+
+    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3.1-flash-image-preview",
+        messages: [{ role: "user", content: prompt }],
+        modalities: ["image", "text"],
+      }),
+    });
+    if (r.status === 429) throw new Error("Rate limit on image gateway. Wait a moment.");
+    if (r.status === 402) throw new Error("AI credits exhausted.");
+    if (!r.ok) throw new Error(`Image gateway error (${r.status})`);
+    const j = await r.json();
+    const dataUrl: string | undefined = j.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (!dataUrl?.startsWith("data:image/")) throw new Error("No logo image returned");
+    const [meta, b64] = dataUrl.split(",");
+    const mime = meta.slice(5, meta.indexOf(";"));
+    const ext = mime.split("/")[1] ?? "png";
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const path = `${userId}/generated/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("assets")
+      .upload(path, bytes, { contentType: mime });
+    if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
+    return { url: supabase.storage.from("assets").getPublicUrl(path).data.publicUrl };
+  });
+
 // One short call per slide, fired sequentially from the client.
 export const generateBackground = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
