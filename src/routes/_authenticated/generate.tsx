@@ -458,14 +458,37 @@ function Generate() {
                 <h3 className="font-bold text-lg">{collegePost.meta.school} {collegePost.meta.sport}</h3>
                 <span className="text-xs text-muted-foreground">{collegeStatuses.filter(s => s === "done").length}/{collegePost.slides.length} rendered</span>
               </div>
-              <CollegePreview
-                post={collegePost}
-                bgImages={collegeBgs}
-                statuses={collegeStatuses}
-                logoUrl={collegeAssets.logoUrl}
-                appScreenUrl={collegeAssets.screenUrl}
-                onRetry={retryCollegeSlide}
-              />
+              {collegeComposed ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {collegePost.slides.map((_, i) => {
+                    const url = collegeBgs[i];
+                    const status = collegeStatuses[i];
+                    return (
+                      <div key={i} className="aspect-[4/5] rounded-lg overflow-hidden border border-border relative bg-[#05080f]">
+                        {url && <img src={url} alt={`slide ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />}
+                        {status !== "done" && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            {status === "loading" && <Loader2 className="size-5 animate-spin text-white/70" />}
+                            {status === "pending" && <span className="text-[10px] text-white/60 uppercase tracking-wider">Queued</span>}
+                            {status === "failed" && (
+                              <button onClick={() => retryCollegeSlide(i)} className="text-[10px] text-red-300 underline">Retry</button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <CollegePreview
+                  post={collegePost}
+                  bgImages={collegeBgs}
+                  statuses={collegeStatuses}
+                  logoUrl={collegeAssets.logoUrl}
+                  appScreenUrl={collegeAssets.screenUrl}
+                  onRetry={retryCollegeSlide}
+                />
+              )}
               <div className="text-sm text-muted-foreground space-y-1">
                 <p className="whitespace-pre-line"><span className="text-foreground font-medium">Caption:</span> {collegePost.caption}</p>
                 <p className="text-primary">{collegePost.hashtags}</p>
