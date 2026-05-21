@@ -13,7 +13,32 @@ const Input = z.object({
   ctaType: z.string(),
   includeAppScreen: z.boolean(),
   promptOverride: z.string().optional(),
+  variantIndex: z.number().min(0).max(200).optional(),
 });
+
+// Rotate persona + angle each call so a batch of count:1 generations doesn't repeat.
+const PERSONAS = [
+  { who: "high school player (boys)", pain: "no exposure, can't get coaches to watch film, lost in the recruiting noise" },
+  { who: "high school player (girls)", pain: "fewer scouts, smaller showcase circuit, harder to get evaluated fairly" },
+  { who: "JUCO / transfer player", pain: "tight timeline, limited contacts, fighting the 'late bloomer' label" },
+  { who: "international player trying to reach US college soccer", pain: "no US film, no contacts, visa + NCAA eligibility maze" },
+  { who: "college coach (D1/D2/NAIA)", pain: "drowning in unsolicited emails, can't separate real prospects from spam, recruiting budget is tiny" },
+  { who: "club coach / DOC", pain: "players ask for help but no time to chase every college, hard to track outcomes" },
+  { who: "soccer parent", pain: "spending thousands on showcases with zero clarity on what works, scared of scams" },
+  { who: "former player turned trainer", pain: "great players being missed because no one is packaging their story" },
+];
+const ANGLES = [
+  "expose a specific lie the recruiting industry sells",
+  "break down what coaches actually look at in the first 10 seconds of film",
+  "explain why showcase ROI is collapsing and what to do instead",
+  "show the hidden math of recruiting (rosters, scholarships, walk-on rates)",
+  "tell the truth about emailing coaches — what works, what gets ignored",
+  "explain academic + position + grad-year filters and why most players misuse them",
+  "call out parents who are wasting money on the wrong things",
+  "give the real timeline of recruiting by grade",
+  "compare what top recruits do vs what everyone else does",
+  "explain why your highlight reel is probably hurting you",
+];
 
 const SYSTEM_BASE = `You are Ryval's faceless slideshow content generator.
 
