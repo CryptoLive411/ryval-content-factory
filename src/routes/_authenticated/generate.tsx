@@ -79,7 +79,7 @@ function Generate() {
   const mut = useMutation({
     mutationFn: async () => {
       setGenerated([]);
-      const drafts: Array<Record<string, any>> = [];
+      const drafts: GeneratedPost[] = [];
 
       // Generate one post per server request so larger batches don't hit upstream timeouts.
       for (let i = 0; i < form.count; i += 1) {
@@ -132,7 +132,7 @@ function Generate() {
     mutationFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Not signed in");
-      const rows = generated.map((p) => ({
+      const rows: PostInsert[] = generated.map((p) => ({
         user_id: u.user!.id,
         hook: p.hook ?? "",
         slide_2: p.slide_2 ?? "",
@@ -143,19 +143,19 @@ function Generate() {
         cta: p.cta ?? "",
         caption: p.caption ?? "",
         hashtags: p.hashtags ?? "",
-        bg_images: (p.bg_images as any) ?? [],
-        bg_image_url: ((p.bg_images as any)?.[0] as string | undefined) ?? null,
+        bg_images: (p.bg_images ?? []).filter((url): url is string => Boolean(url)),
+        bg_image_url: p.bg_images?.find((url): url is string => Boolean(url)) ?? null,
         logo_url: p.logo_url ?? null,
         app_screen_url: p.app_screen_url ?? null,
-        category: form.category as any,
-        audience: form.audience as any,
-        platform: form.platform as any,
-        account: form.account as any,
+        category: form.category,
+        audience: form.audience,
+        platform: form.platform,
+        account: form.account,
         cta_type: form.ctaType,
         tone: form.tone,
         status: "drafted" as const,
       }));
-      const { error } = await supabase.from("posts").insert(rows as any);
+      const { error } = await supabase.from("posts").insert(rows);
       if (error) throw error;
     },
 
