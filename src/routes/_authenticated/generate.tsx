@@ -81,9 +81,10 @@ function Generate() {
       setGenerated([]);
       const drafts: GeneratedPost[] = [];
 
-      // Generate one post per server request so larger batches don't hit upstream timeouts.
+      // Rotate variantIndex so each post hits a different persona + angle.
+      const seedBase = Math.floor(Math.random() * 1000);
       for (let i = 0; i < form.count; i += 1) {
-        const r = await generate({ data: { ...form, count: 1 } });
+        const r = await generate({ data: { ...form, count: 1, variantIndex: seedBase + i } });
         const seeded: GeneratedPost[] = r.posts.map((p) => ({
           ...p,
           cta_type: form.ctaType,
@@ -101,6 +102,7 @@ function Generate() {
           .filter((task) => Boolean(task.prompt)),
       );
 
+      let imgFails = 0;
       // Keep image generation bounded too; this avoids flooding the gateway on big batches.
       for (let i = 0; i < tasks.length; i += 3) {
         await Promise.all(
@@ -117,10 +119,16 @@ function Generate() {
                 return next;
               });
             } catch (e) {
+              imgFails += 1;
               console.error("bg gen failed", postIdx, slideIdx, e);
             }
           }),
         );
+      }
+      if (imgFails > 0) {
+        toast.error(`${imgFails} background image(s) failed to generate — you can retry by re-generating.`);
+      } else {
+        toast.success("All backgrounds rendered.");
       }
 
       return { posts: drafts };
