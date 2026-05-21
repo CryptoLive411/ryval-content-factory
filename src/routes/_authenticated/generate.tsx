@@ -159,6 +159,8 @@ function Generate() {
   const [collegeBgs, setCollegeBgs] = useState<(string | null)[]>([]);
   const [collegeStatuses, setCollegeStatuses] = useState<CollegeSlideStatus[]>([]);
   const [collegeAssets, setCollegeAssets] = useState<{ logoUrl: string | null; screenUrl: string | null }>({ logoUrl: null, screenUrl: null });
+  const [collegeEngine, setCollegeEngine] = useState<CollegeEngine>("openai");
+  const [collegeComposed, setCollegeComposed] = useState(false); // true when last render used openai composed mode
 
   // ── Ryval generation
   const ryvalMut = useMutation({
