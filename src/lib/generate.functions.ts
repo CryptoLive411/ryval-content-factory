@@ -124,47 +124,12 @@ Return strictly via the create_posts tool.`;
     const logoUrl = logoAssets?.[0]?.file_url ?? null;
     const screens = (screenAssets ?? []).map(s => s.file_url);
 
-    // 3. Generate background image per post (parallel, capped concurrency)
-    const generateBg = async (prompt: string): Promise<string | null> => {
-      try {
-        const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash-image",
-            messages: [{ role: "user", content: `${prompt}. Vertical 9:16 composition. Cinematic, moody, premium editorial. NO text. NO logos. NO school crests.` }],
-            modalities: ["image", "text"],
-          }),
-        });
-        if (!r.ok) { console.error("img gen failed", r.status); return null; }
-        const j = await r.json();
-        const dataUrl: string | undefined = j.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-        if (!dataUrl?.startsWith("data:image/")) return null;
-        const [meta, b64] = dataUrl.split(",");
-        const mime = meta.slice(5, meta.indexOf(";"));
-        const ext = mime.split("/")[1] ?? "png";
-        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-        const path = `${userId}/generated/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("assets").upload(path, bytes, { contentType: mime });
-        if (upErr) { console.error("upload failed", upErr); return null; }
-        return supabase.storage.from("assets").getPublicUrl(path).data.publicUrl;
-      } catch (e) { console.error("bg gen error", e); return null; }
-    };
+    // Note: background images are generated client-side (per post, in parallel)
+    // via `generateBackground` below — keeps this fn fast and avoids worker timeouts.
 
-    // Concurrency-cap of 4 to be friendly to the gateway
-    const bgUrls: (string | null)[] = new Array(posts.length).fill(null);
-    const queue = posts.map((p, i) => ({ i, prompt: p.imagePrompt }));
-    const workers = Array.from({ length: Math.min(4, queue.length) }, async () => {
-      while (queue.length) {
-        const item = queue.shift()!;
-        bgUrls[item.i] = await generateBg(item.prompt);
-      }
-    });
-    await Promise.all(workers);
-
-    const enriched = posts.map((p, i) => ({
+    const enriched = posts.map((p) => ({
       ...p,
-      bg_image_url: bgUrls[i],
+      bg_image_url: null as string | null,
       logo_url: logoUrl,
       app_screen_url: data.includeAppScreen && screens.length
         ? screens[Math.floor(Math.random() * screens.length)]
@@ -172,4 +137,40 @@ Return strictly via the create_posts tool.`;
     }));
 
     return { posts: enriched };
+  });
+
+// One short call per post, fired in parallel from the client.
+export const generateBackground = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ prompt: z.string().min(3).max(2000) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+    const { supabase, userId } = context;
+
+    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-image",
+        messages: [{ role: "user", content: `${data.prompt}. Vertical 9:16 composition. Cinematic, moody, premium editorial. NO text. NO logos. NO school crests.` }],
+        modalities: ["image", "text"],
+      }),
+    });
+    if (r.status === 429) throw new Error("Rate limit on image gateway. Wait a moment.");
+    if (r.status === 402) throw new Error("AI credits exhausted.");
+    if (!r.ok) throw new Error(`Image gateway error (${r.status})`);
+
+    const j = await r.json();
+    const dataUrl: string | undefined = j.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (!dataUrl?.startsWith("data:image/")) throw new Error("No image returned");
+
+    const [meta, b64] = dataUrl.split(",");
+    const mime = meta.slice(5, meta.indexOf(";"));
+    const ext = mime.split("/")[1] ?? "png";
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const path = `${userId}/generated/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("assets").upload(path, bytes, { contentType: mime });
+    if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
+    return { url: supabase.storage.from("assets").getPublicUrl(path).data.publicUrl };
   });

@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Sparkles, Loader2 } from "lucide-react";
-import { generatePosts } from "@/lib/generate.functions";
+import { generatePosts, generateBackground } from "@/lib/generate.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/_authenticated/generate")({ component: Ge
 function Generate() {
   const qc = useQueryClient();
   const generate = useServerFn(generatePosts);
+  const genBg = useServerFn(generateBackground);
   const [form, setForm] = useState({
     count: 5, slidesPerPost: 5,
     platform: "tiktok", account: "recruiting_truth",
@@ -28,10 +29,30 @@ function Generate() {
   const [generated, setGenerated] = useState<Array<Record<string, string | null>>>([]);
 
   const mut = useMutation({
-    mutationFn: () => generate({ data: form }),
-    onSuccess: (r) => { setGenerated(r.posts as any); toast.success(`Generated ${r.posts.length} posts`); },
+    mutationFn: async () => {
+      const r = await generate({ data: form });
+      setGenerated(r.posts as any);
+      toast.success(`Generated ${r.posts.length} drafts — rendering backgrounds…`);
+      // Fire image generation in parallel; update each card as it returns.
+      await Promise.all(r.posts.map(async (p, i) => {
+        const prompt = (p as any).imagePrompt as string | undefined;
+        if (!prompt) return;
+        try {
+          const { url } = await genBg({ data: { prompt } });
+          setGenerated(prev => {
+            const next = [...prev];
+            if (next[i]) next[i] = { ...next[i], bg_image_url: url };
+            return next;
+          });
+        } catch (e) {
+          console.error("bg gen failed for post", i, e);
+        }
+      }));
+      return r;
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Generation failed"),
   });
+
 
   const saveAll = useMutation({
     mutationFn: async () => {
