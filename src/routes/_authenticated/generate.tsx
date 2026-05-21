@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Download } from "lucide-react";
 import { generatePosts, generateBackground } from "@/lib/generate.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -20,6 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { CarouselPreview } from "@/components/carousel-preview";
 import { CATEGORIES, PLATFORMS, ACCOUNTS, AUDIENCES, TONES, CTA_TYPES } from "@/lib/ryval";
+import { exportPostForTikTok } from "@/lib/tiktok-export";
 
 export const Route = createFileRoute("/_authenticated/generate")({ component: Generate });
 
@@ -58,6 +59,51 @@ type GeneratedPost = {
 
 type SelectOption = { value: string; label: string } | string;
 type SelectKey = Exclude<keyof FormState, "includeAppScreen">;
+
+function DraftCard({ post, index }: { post: GeneratedPost; index: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState(false);
+  const onDownload = async () => {
+    if (!ref.current) return;
+    setBusy(true);
+    try {
+      const root = ref.current.querySelector<HTMLElement>("[data-carousel-root]");
+      if (!root) throw new Error("Preview not ready");
+      const slug = (post.hook ?? `post-${index + 1}`)
+        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || `post-${index + 1}`;
+      await exportPostForTikTok({
+        container: root,
+        caption: post.caption ?? "",
+        hashtags: post.hashtags ?? "",
+        filenameBase: slug,
+      });
+      toast.success("TikTok pack downloaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div ref={ref} className="rounded-xl border border-border bg-gradient-card p-5">
+      <div className="flex justify-between items-baseline mb-4 gap-3">
+        <h3 className="font-bold text-lg text-balance flex-1">{post.hook}</h3>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-muted-foreground">Draft #{index + 1}</span>
+          <Button size="sm" variant="outline" onClick={onDownload} disabled={busy}>
+            {busy ? <Loader2 className="size-3 mr-1.5 animate-spin" /> : <Download className="size-3 mr-1.5" />}
+            TikTok pack
+          </Button>
+        </div>
+      </div>
+      <CarouselPreview post={post} />
+      <div className="mt-4 text-sm text-muted-foreground space-y-1">
+        <p><span className="text-foreground font-medium">Caption:</span> {post.caption}</p>
+        <p className="text-primary">{post.hashtags}</p>
+      </div>
+    </div>
+  );
+}
 
 function Generate() {
   const qc = useQueryClient();
@@ -270,19 +316,7 @@ function Generate() {
             </Button>
           </div>
           {generated.map((p, i) => (
-            <div key={i} className="rounded-xl border border-border bg-gradient-card p-5">
-              <div className="flex justify-between items-baseline mb-4">
-                <h3 className="font-bold text-lg text-balance">{p.hook}</h3>
-                <span className="text-xs text-muted-foreground">Draft #{i + 1}</span>
-              </div>
-              <CarouselPreview post={p} />
-              <div className="mt-4 text-sm text-muted-foreground space-y-1">
-                <p>
-                  <span className="text-foreground font-medium">Caption:</span> {p.caption}
-                </p>
-                <p className="text-primary">{p.hashtags}</p>
-              </div>
-            </div>
+            <DraftCard key={i} post={p} index={i} />
           ))}
         </div>
       )}
