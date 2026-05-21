@@ -423,8 +423,7 @@ function Generate() {
               <Select value={collegeEngine} onValueChange={(v) => setCollegeEngine(v as CollegeEngine)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="openai">OpenAI gpt-image-1 — full composed slides (best for stats + emojis)</SelectItem>
-                  <SelectItem value="nano-pro">Nano Banana Pro — photo background only (we overlay text)</SelectItem>
+                  <SelectItem value="nano-pro">Nano Banana Pro — reliable photo background + crisp local text</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -445,9 +444,7 @@ function Generate() {
               </Button>
             )}
             <p className="text-xs text-muted-foreground">
-              {collegeEngine === "openai"
-                ? "OpenAI bakes text, stats, and emojis directly into the image (~30s/slide, ~$0.20 each)."
-                : "Nano Banana Pro generates the background photo only — we render text on top."}
+              Nano Banana Pro generates the background photo — Ryval renders the text and export locally.
             </p>
           </div>
 
