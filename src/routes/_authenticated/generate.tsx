@@ -155,9 +155,9 @@ function Generate() {
 
       let imgFails = 0;
       // Keep image generation bounded too; this avoids flooding the gateway on big batches.
-      for (let i = 0; i < tasks.length; i += 3) {
+      for (let i = 0; i < tasks.length; i += 8) {
         await Promise.all(
-          tasks.slice(i, i + 3).map(async ({ prompt, postIdx, slideIdx }) => {
+          tasks.slice(i, i + 8).map(async ({ prompt, postIdx, slideIdx }) => {
             try {
               const { url } = await genBg({ data: { prompt } });
               setGenerated((prev) => {
