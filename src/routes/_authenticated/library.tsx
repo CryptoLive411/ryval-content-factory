@@ -162,9 +162,15 @@ function PostEditor({ post, onSave, onDelete, onDownload, downloading }: any) {
         <div><Label className="text-xs">Scheduled date</Label><Input type="datetime-local" value={p.scheduled_date?.slice(0,16) ?? ""} onChange={e => setP({...p, scheduled_date: e.target.value ? new Date(e.target.value).toISOString() : null})} /></div>
       </div>
       <div><Label className="text-xs">Notes</Label><Textarea value={p.notes ?? ""} onChange={f("notes")} /></div>
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center gap-2 flex-wrap">
         <Button variant="destructive" onClick={onDelete}>Delete</Button>
-        <Button onClick={() => onSave(p)} className="bg-gradient-primary text-primary-foreground font-semibold">Save</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onDownload} disabled={downloading}>
+            {downloading ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <Download className="size-4 mr-1.5" />}
+            TikTok pack
+          </Button>
+          <Button onClick={() => onSave(p)} className="bg-gradient-primary text-primary-foreground font-semibold">Save</Button>
+        </div>
       </div>
     </div>
   );
