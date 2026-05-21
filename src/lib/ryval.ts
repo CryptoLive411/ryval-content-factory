@@ -59,9 +59,12 @@ export const CTA_TYPES = [
 export const POSTING_WINDOWS = ["09:00", "12:30", "15:30", "18:30", "20:30", "22:00"];
 
 export const ASSET_TAGS = [
-  "player profile","coach dashboard","feed","reels","opportunities","discover",
-  "cta","waitlist","app store","launch","dark mode","light mode","logo","founder","background",
+  "logo","ryval logo","main page","quick scout","ryval discovery",
+  "player profile","player feed","player messages","player opportunities","player reels",
+  "coach profile","coach feed","coach dashboard","roster needs","applicant screen",
+  "cta","waitlist","app store","launch","dark mode","light mode","founder","background",
 ];
+
 
 export const TEMPLATE_PRESETS = [
   { id: "dark_premium", name: "Dark Premium", bg: "linear-gradient(135deg,#0b0f1a,#11182b)", accent: "#3b82f6", text: "#ffffff" },

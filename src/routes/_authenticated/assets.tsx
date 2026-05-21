@@ -83,7 +83,7 @@ function Assets() {
             <div className="p-3">
               <p className="text-xs font-medium truncate">{a.file_name}</p>
               <div className="flex flex-wrap gap-1 mt-2">
-                {ASSET_TAGS.slice(0,6).map(t => {
+                {ASSET_TAGS.map(t => {
                   const on = a.tags?.includes(t);
                   return (
                     <button key={t} onClick={() => toggleTag.mutate({ id: a.id, tags: on ? a.tags!.filter((x: string) => x !== t) : [...(a.tags ?? []), t] })}
