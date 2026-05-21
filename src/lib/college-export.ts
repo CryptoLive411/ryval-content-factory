@@ -139,23 +139,20 @@ function drawChipRow(ctx: CanvasRenderingContext2D, chips: { title: string; body
   }
   chips.forEach((c, i) => {
     const cx = PAD + colW * i + colW / 2;
-    // small accent square icon
-    ctx.fillStyle = accent;
-    ctx.fillRect(cx - 16, top + 8, 32, 32);
     // title
     ctx.fillStyle = "#ffffff";
-    setSans(ctx, 800, 18);
+    setSans(ctx, 800, 20);
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     const titleLines = wrap(ctx, c.title.toUpperCase(), colW - 24);
-    let ty = top + 60;
-    for (const tl of titleLines) { ctx.fillText(tl, cx, ty); ty += 22; }
+    let ty = top + 24;
+    for (const tl of titleLines) { ctx.fillText(tl, cx, ty); ty += 24; }
     // body
     if (c.body) {
-      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.fillStyle = "rgba(255,255,255,0.78)";
       setSans(ctx, 400, 15);
       const lines = wrap(ctx, c.body, colW - 24);
-      let by = ty + 6;
+      let by = ty + 8;
       for (const l of lines) { ctx.fillText(l, cx, by); by += 19; }
     }
   });
@@ -202,27 +199,49 @@ async function renderSlide(
     const titleY = 280;
     const after = drawDisplayTitle(ctx, slide.title, slide.accentWord, accent, titleY, titleSize);
     if (slide.subline) drawSubline(ctx, slide.subline, after + 24, accent);
-    if (appScreenUrl) {
-      const img = await loadImage(appScreenUrl);
-      if (img) {
-        const phoneW = 360;
-        const phoneH = Math.round(phoneW * (img.height / img.width));
-        const phoneX = W - PAD - phoneW;
-        const phoneY = Math.round((H - phoneH) / 2);
-        const rr = 32;
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(phoneX + rr, phoneY);
-        ctx.arcTo(phoneX + phoneW, phoneY, phoneX + phoneW, phoneY + phoneH, rr);
-        ctx.arcTo(phoneX + phoneW, phoneY + phoneH, phoneX, phoneY + phoneH, rr);
-        ctx.arcTo(phoneX, phoneY + phoneH, phoneX, phoneY, rr);
-        ctx.arcTo(phoneX, phoneY, phoneX + phoneW, phoneY, rr);
-        ctx.closePath();
-        ctx.clip();
-        drawCover(ctx, img, phoneX, phoneY, phoneW, phoneH);
-        ctx.restore();
+    // Always render a phone mockup on the right — even without an app screen image.
+    const phoneW = 360;
+    const img = appScreenUrl ? await loadImage(appScreenUrl) : null;
+    const phoneH = img ? Math.round(phoneW * (img.height / img.width)) : Math.round(phoneW * 19 / 9);
+    const phoneX = W - PAD - phoneW;
+    const phoneY = Math.round((H - phoneH) / 2);
+    const rr = 36;
+    // outer device frame
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(phoneX + rr, phoneY);
+    ctx.arcTo(phoneX + phoneW, phoneY, phoneX + phoneW, phoneY + phoneH, rr);
+    ctx.arcTo(phoneX + phoneW, phoneY + phoneH, phoneX, phoneY + phoneH, rr);
+    ctx.arcTo(phoneX, phoneY + phoneH, phoneX, phoneY, rr);
+    ctx.arcTo(phoneX, phoneY, phoneX + phoneW, phoneY, rr);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.clip();
+    if (img) {
+      drawCover(ctx, img, phoneX, phoneY, phoneW, phoneH);
+    } else {
+      // simple placeholder app UI
+      const g = ctx.createLinearGradient(phoneX, phoneY, phoneX, phoneY + phoneH);
+      g.addColorStop(0, "#0a0e1a");
+      g.addColorStop(1, "#05080f");
+      ctx.fillStyle = g;
+      ctx.fillRect(phoneX, phoneY, phoneW, phoneH);
+      ctx.fillStyle = accent;
+      ctx.fillRect(phoneX + 24, phoneY + 60, 120, 6);
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      setSans(ctx, 800, 24);
+      ctx.textAlign = "start";
+      ctx.fillText("RYVAL", phoneX + 24, phoneY + 80);
+      ctx.fillStyle = "rgba(255,255,255,0.10)";
+      for (let i = 0; i < 4; i++) {
+        ctx.fillRect(phoneX + 24, phoneY + 150 + i * 90, phoneW - 48, 70);
       }
     }
+    ctx.restore();
   } else {
     // compete / environment / more_than: title block + chip row at bottom
     const titleSize = slide.kind === "more_than" ? 150 : 170;

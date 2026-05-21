@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Sparkles, Loader2, Download, GraduationCap, Megaphone } from "lucide-react";
-import { generatePosts, generateBackground } from "@/lib/generate.functions";
+import { generatePosts, generateBackground, generateCollegeCopy } from "@/lib/generate.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { PageHeader, PageShell } from "@/components/page-shell";
@@ -169,6 +169,7 @@ async function fetchBrandAssets() {
 function Generate() {
   const generate = useServerFn(generatePosts);
   const genBg = useServerFn(generateBackground);
+  const genCollegeCopy = useServerFn(generateCollegeCopy);
 
   const [mode, setMode] = useState<Mode>("ryval");
   const [imageEngine, setImageEngine] = useState<ImageEngine>("nano");
@@ -252,7 +253,17 @@ function Generate() {
       };
       if (!input.school) throw new Error("Enter a school name");
 
-      const built = buildCollegePost(input);
+      toast.message(`Writing ${input.school} copy…`);
+      let copy = {};
+      try {
+        copy = await genCollegeCopy({
+          data: { school: input.school, sport: input.sport, conference: input.conference },
+        });
+      } catch (e) {
+        console.error("college copy failed, using defaults", e);
+      }
+
+      const built = buildCollegePost(input, copy);
       setCollegePost(built);
       setCollegeBgs(new Array(built.slides.length).fill(null));
       setCollegeStatuses(built.slides.map(() => "pending" as const));
