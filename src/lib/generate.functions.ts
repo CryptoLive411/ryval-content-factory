@@ -123,17 +123,27 @@ export const generatePosts = createServerFn({ method: "POST" })
       },
     };
 
+    const vi = data.variantIndex ?? Math.floor(Math.random() * 1000);
+    const persona = PERSONAS[vi % PERSONAS.length];
+    const angle = ANGLES[vi % ANGLES.length];
+
     const userPrompt = `${data.promptOverride ?? ""}
 Generate ${data.count} faceless slideshow carousel post(s).
+
+THIS POST'S PERSONA (speak directly to them): ${persona.who}
+Their real pain: ${persona.pain}
+THIS POST'S ANGLE: ${angle}
+
 - Platform: ${data.platform}
 - Account: ${data.account}
-- Audience: ${data.audience}
+- Broader audience bucket: ${data.audience}
 - Category: ${data.category}
 - Tone: ${data.tone}
-- CTA type: ${data.ctaType} (the final CTA slide must reflect this — e.g. "Join the waitlist", "Coming soon", "Follow for more")
+- CTA type: ${data.ctaType} (the final CTA slide must reflect this — e.g. "Join the waitlist", "Coming soon", "Follow for more"). The CTA is the ONLY slide that may mention Ryval.
 - Slides per post: ${data.slidesPerPost} (hook + body slides + CTA). Use slide_6 only if slidesPerPost >= 7, otherwise return empty string for slide_6.text and imagePrompt.
 
-Every post MUST follow: problem → escalation → solution → CTA.
+Structure: problem (specific to this persona) → why it's broken → real actionable tips they can use tomorrow → CTA.
+Slides 1 through second-to-last MUST be pure value — no app mention, no product plug.
 Every slide MUST have its own imagePrompt that visually matches its text.
 
 Return strictly via the create_posts tool.`;
