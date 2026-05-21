@@ -25,11 +25,11 @@ function Generate() {
     audience: "players", category: "harsh_truths",
     tone: "direct", ctaType: "join waitlist", includeAppScreen: true,
   });
-  const [generated, setGenerated] = useState<Array<Record<string, string>>>([]);
+  const [generated, setGenerated] = useState<Array<Record<string, string | null>>>([]);
 
   const mut = useMutation({
     mutationFn: () => generate({ data: form }),
-    onSuccess: (r) => { setGenerated(r.posts); toast.success(`Generated ${r.posts.length} posts`); },
+    onSuccess: (r) => { setGenerated(r.posts as any); toast.success(`Generated ${r.posts.length} posts`); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Generation failed"),
   });
 
@@ -39,15 +39,16 @@ function Generate() {
       if (!u.user) throw new Error("Not signed in");
       const rows = generated.map(p => ({
         user_id: u.user!.id,
-        hook: p.hook, slide_2: p.slide_2, slide_3: p.slide_3, slide_4: p.slide_4, slide_5: p.slide_5, slide_6: p.slide_6 ?? "",
-        cta: p.cta, caption: p.caption, hashtags: p.hashtags,
+        hook: p.hook ?? "", slide_2: p.slide_2 ?? "", slide_3: p.slide_3 ?? "", slide_4: p.slide_4 ?? "", slide_5: p.slide_5 ?? "", slide_6: p.slide_6 ?? "",
+        cta: p.cta ?? "", caption: p.caption ?? "", hashtags: p.hashtags ?? "",
+        bg_image_url: p.bg_image_url ?? null, logo_url: p.logo_url ?? null, app_screen_url: p.app_screen_url ?? null,
         category: form.category as any, audience: form.audience as any, platform: form.platform as any, account: form.account as any,
         cta_type: form.ctaType, tone: form.tone, status: "drafted" as const,
       }));
       const { error } = await supabase.from("posts").insert(rows as any);
       if (error) throw error;
-
     },
+
     onSuccess: () => {
       toast.success("Saved to library");
       setGenerated([]);
