@@ -51,11 +51,26 @@ function Library() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["posts"] }); toast.success("Deleted"); setOpen(null); },
   });
 
-  const exportApproved = () => {
-    const rows = posts.filter(p => ["approved","designed","scheduled"].includes(p.status));
-    if (!rows.length) return toast.error("No approved posts");
-    downloadCSV(`ryval-posts-${Date.now()}.csv`, postsToCSV(rows as any));
-    toast.success(`Exported ${rows.length} posts`);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const downloadPost = async (p: any, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setDownloadingId(p.id);
+    try {
+      const slug = (p.hook ?? `post-${p.id.slice(0, 6)}`)
+        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || `post-${p.id.slice(0, 6)}`;
+      await exportPostForTikTok({
+        post: p,
+        caption: p.caption ?? "",
+        hashtags: p.hashtags ?? "",
+        filenameBase: slug,
+      });
+      toast.success("TikTok pack downloaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const editing = posts.find(p => p.id === open);
@@ -65,8 +80,8 @@ function Library() {
       <PageHeader
         title="Post Library"
         subtitle={`${posts.length} posts`}
-        actions={<Button onClick={exportApproved} className="bg-gradient-primary text-primary-foreground font-semibold"><Download className="size-4 mr-2" />Export Approved (CSV)</Button>}
       />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <FilterSelect label="Category" value={filters.category} onChange={(v: string) => setFilters(f => ({...f, category: v}))} options={CATEGORIES as any} />
         <FilterSelect label="Platform" value={filters.platform} onChange={(v: string) => setFilters(f => ({...f, platform: v}))} options={PLATFORMS as any} />
