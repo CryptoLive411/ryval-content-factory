@@ -19,14 +19,23 @@ const SYSTEM_BASE = `You are Ryval's faceless slideshow content generator.
 
 Ryval is a soccer recruiting app that helps players get discovered by college coaches and helps coaches find players faster (clips, filters, academics, position, grad year, nationality, recruiting signals).
 
-Rules:
-- Max 12 words per slide. Punchy, direct, premium.
+NARRATIVE STRUCTURE (mandatory):
+- Slide 1 (hook): Name the PROBLEM bluntly. E.g. "Recruiting is rigged against you."
+- Middle slides: Twist the knife — show WHY it's broken, what people get wrong, what it costs them. Each slide must escalate.
+- Second-to-last slide: Pivot to the SOLUTION / what to do instead.
+- CTA slide: Hard call to action tied to the chosen CTA type (waitlist / coming soon / follow).
+- Every post must move from PROBLEM → ESCALATION → SOLUTION → CTA. No random tip lists.
+
+WRITING RULES:
+- Max 12 words per slide. Punchy, direct, premium. Each slide reads on its own.
 - Tone: direct, human, confident, useful, slightly intense, premium, modern. Never cheesy, never corporate, never AI-slop.
 - Do NOT promise scholarships, guarantee recruitment, fake coach quotes, use school/NCAA logos, or overhype Ryval.
-- Useful first, then soft Ryval pitch.
 - Captions: 1-3 short lines. Hashtags: 6-10, mix niche + broad, no spammy stacks.
-- The final CTA slide should be a clean, branded call to action tied to the chosen CTA type.
-- imagePrompt: one cinematic background-image prompt for the whole post. Dark, premium, soccer-themed (stadium lights, grass texture, ball motion-blur, locker room, training cones, dramatic shadows). NO text, NO logos, NO faces close-up, NO school crests. Moody, editorial, 9:16-friendly composition.`;
+
+IMAGE PROMPTS (CRITICAL):
+- For EACH slide produce a unique imagePrompt that VISUALLY MATCHES that slide's specific text.
+- Dark, premium, cinematic, soccer/recruiting-themed (empty stadium, locker room, training, scouts in stands, paperwork, phone screens, late-night film study, etc.). NO text, NO logos, NO faces close-up, NO school crests. 9:16 composition.
+- Vary subject across slides in the same post — don't repeat the same setting.`;
 
 export const generatePosts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -34,9 +43,18 @@ export const generatePosts = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
-    const { supabase, userId } = context;
+    const { supabase } = context;
 
-    // 1. Generate text content
+    const slideObj = (desc: string) => ({
+      type: "object",
+      properties: {
+        text: { type: "string", description: desc },
+        imagePrompt: { type: "string", description: "Cinematic bg-image prompt that VISUALLY matches this slide's text" },
+      },
+      required: ["text", "imagePrompt"],
+      additionalProperties: false,
+    });
+
     const tool = {
       type: "function",
       function: {
@@ -50,18 +68,17 @@ export const generatePosts = createServerFn({ method: "POST" })
               items: {
                 type: "object",
                 properties: {
-                  hook: { type: "string", description: "Slide 1, max 12 words" },
-                  slide_2: { type: "string" },
-                  slide_3: { type: "string" },
-                  slide_4: { type: "string" },
-                  slide_5: { type: "string" },
-                  slide_6: { type: "string", description: "Optional, may be empty" },
-                  cta: { type: "string", description: "Final CTA slide text" },
+                  hook: slideObj("Slide 1 — name the PROBLEM bluntly, max 12 words"),
+                  slide_2: slideObj("Escalate the problem"),
+                  slide_3: slideObj("Twist the knife / show the cost"),
+                  slide_4: slideObj("Pivot toward the solution"),
+                  slide_5: slideObj("Solution: what to do instead"),
+                  slide_6: slideObj("Optional extra solution slide — leave text empty if not needed"),
+                  cta: { type: "string", description: "Final CTA slide text tied to the CTA type" },
                   caption: { type: "string" },
                   hashtags: { type: "string", description: "Space-separated #tags" },
-                  imagePrompt: { type: "string", description: "Cinematic bg-image prompt for the whole post" },
                 },
-                required: ["hook", "slide_2", "slide_3", "slide_4", "slide_5", "cta", "caption", "hashtags", "imagePrompt"],
+                required: ["hook", "slide_2", "slide_3", "slide_4", "slide_5", "slide_6", "cta", "caption", "hashtags"],
                 additionalProperties: false,
               },
             },
@@ -79,8 +96,11 @@ Generate ${data.count} faceless slideshow carousel post(s).
 - Audience: ${data.audience}
 - Category: ${data.category}
 - Tone: ${data.tone}
-- CTA type: ${data.ctaType}
-- Slides per post: ${data.slidesPerPost} (hook + ${data.slidesPerPost - 2} body slides + CTA slide)
+- CTA type: ${data.ctaType} (the final CTA slide must reflect this — e.g. "Join the waitlist", "Coming soon", "Follow for more")
+- Slides per post: ${data.slidesPerPost} (hook + body slides + CTA). Use slide_6 only if slidesPerPost >= 7, otherwise return empty string for slide_6.text and imagePrompt.
+
+Every post MUST follow: problem → escalation → solution → CTA.
+Every slide MUST have its own imagePrompt that visually matches its text.
 
 Return strictly via the create_posts tool.`;
 
@@ -109,9 +129,15 @@ Return strictly via the create_posts tool.`;
     const call = textJson.choices?.[0]?.message?.tool_calls?.[0];
     if (!call) throw new Error("No tool call returned from model");
     const args = JSON.parse(call.function.arguments);
-    const posts = args.posts as Array<Record<string, string>>;
+    type SlideObj = { text: string; imagePrompt: string };
+    type RawPost = {
+      hook: SlideObj; slide_2: SlideObj; slide_3: SlideObj;
+      slide_4: SlideObj; slide_5: SlideObj; slide_6: SlideObj;
+      cta: string; caption: string; hashtags: string;
+    };
+    const posts = args.posts as RawPost[];
 
-    // 2. Look up brand assets (logo + app screenshot pool)
+    // Brand assets
     const [{ data: logoAssets }, { data: screenAssets }] = await Promise.all([
       supabase.from("assets").select("file_url").overlaps("tags", ["logo", "ryval logo"]).order("created_at", { ascending: false }).limit(1),
       supabase.from("assets").select("file_url").overlaps("tags", [
@@ -124,22 +150,34 @@ Return strictly via the create_posts tool.`;
     const logoUrl = logoAssets?.[0]?.file_url ?? null;
     const screens = (screenAssets ?? []).map(s => s.file_url);
 
-    // Note: background images are generated client-side (per post, in parallel)
-    // via `generateBackground` below — keeps this fn fast and avoids worker timeouts.
-
-    const enriched = posts.map((p) => ({
-      ...p,
-      bg_image_url: null as string | null,
-      logo_url: logoUrl,
-      app_screen_url: data.includeAppScreen && screens.length
-        ? screens[Math.floor(Math.random() * screens.length)]
-        : null,
-    }));
+    // Flatten to client-friendly shape; backgrounds generated per-slide on the client.
+    const enriched = posts.map((p) => {
+      const slidePrompts = [p.hook, p.slide_2, p.slide_3, p.slide_4, p.slide_5, p.slide_6]
+        .map(s => s?.imagePrompt ?? "");
+      return {
+        hook: p.hook?.text ?? "",
+        slide_2: p.slide_2?.text ?? "",
+        slide_3: p.slide_3?.text ?? "",
+        slide_4: p.slide_4?.text ?? "",
+        slide_5: p.slide_5?.text ?? "",
+        slide_6: p.slide_6?.text ?? "",
+        cta: p.cta ?? "",
+        caption: p.caption ?? "",
+        hashtags: p.hashtags ?? "",
+        slide_image_prompts: slidePrompts,
+        bg_images: [] as string[],
+        bg_image_url: null as string | null,
+        logo_url: logoUrl,
+        app_screen_url: data.includeAppScreen && screens.length
+          ? screens[Math.floor(Math.random() * screens.length)]
+          : null,
+      };
+    });
 
     return { posts: enriched };
   });
 
-// One short call per post, fired in parallel from the client.
+// One short call per slide, fired in parallel from the client.
 export const generateBackground = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ prompt: z.string().min(3).max(2000) }).parse(input))
