@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { CarouselPreview } from "@/components/carousel-preview";
 import { CATEGORIES, PLATFORMS, ACCOUNTS, AUDIENCES, TONES, CTA_TYPES } from "@/lib/ryval";
 import { exportPostForTikTok, renderPostSlideUrls } from "@/lib/tiktok-export";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/generate")({ component: Generate });
 
@@ -227,28 +228,62 @@ function Generate() {
       toast.success("Draft ready — rendering backgrounds…");
 
       const prompts = (post.slide_image_prompts ?? []) as string[];
+      const bgs: (string | null)[] = [];
       let fails = 0;
       for (let i = 0; i < prompts.length; i++) {
         const prompt = prompts[i];
-        if (!prompt) continue;
+        if (!prompt) { bgs[i] = null; continue; }
         try {
           const { url } = await withRetry(
             () => genBg({ data: { prompt, model: imageEngine, stylePreset: "ryval" } }),
             3,
           );
+          bgs[i] = url;
           setRyvalPost((prev) => {
             if (!prev) return prev;
-            const bgs = [...(prev.bg_images ?? [])];
-            bgs[i] = url;
-            return { ...prev, bg_images: bgs };
+            const next = [...(prev.bg_images ?? [])];
+            next[i] = url;
+            return { ...prev, bg_images: next };
           });
         } catch (e) {
           fails++;
+          bgs[i] = null;
           console.error("bg gen failed", i, e);
         }
       }
       if (fails > 0) toast.error(`${fails} image(s) failed — refresh and re-generate.`);
       else toast.success("All backgrounds rendered.");
+
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        if (auth.user) {
+          const { error } = await supabase.from("posts").insert({
+            user_id: auth.user.id,
+            hook: post.hook ?? "",
+            slide_2: post.slide_2 ?? "",
+            slide_3: post.slide_3 ?? "",
+            slide_4: post.slide_4 ?? "",
+            slide_5: post.slide_5 ?? "",
+            slide_6: post.slide_6 ?? "",
+            cta: post.cta ?? "",
+            caption: post.caption ?? "",
+            hashtags: post.hashtags ?? "",
+            cta_type: form.ctaType,
+            platform: form.platform,
+            account: form.account,
+            audience: form.audience,
+            category: form.category,
+            tone: form.tone,
+            status: "idea",
+            bg_images: bgs.filter((u): u is string => !!u),
+          });
+          if (error) throw error;
+          toast.success("Saved to library");
+        }
+      } catch (e) {
+        console.error("save failed", e);
+        toast.error("Could not save to library");
+      }
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Generation failed"),
   });
