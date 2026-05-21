@@ -113,9 +113,14 @@ Return strictly via the create_posts tool.`;
 
     // 2. Look up brand assets (logo + app screenshot pool)
     const [{ data: logoAssets }, { data: screenAssets }] = await Promise.all([
-      supabase.from("assets").select("file_url").contains("tags", ["logo"]).order("created_at", { ascending: false }).limit(1),
-      supabase.from("assets").select("file_url").overlaps("tags", ["player profile", "feed", "coach dashboard", "discover", "opportunities", "reels", "app store"]).limit(20),
+      supabase.from("assets").select("file_url").overlaps("tags", ["logo", "ryval logo"]).order("created_at", { ascending: false }).limit(1),
+      supabase.from("assets").select("file_url").overlaps("tags", [
+        "main page","quick scout","ryval discovery",
+        "player profile","player feed","player messages","player opportunities","player reels",
+        "coach profile","coach feed","coach dashboard","roster needs","applicant screen",
+      ]).limit(40),
     ]);
+
     const logoUrl = logoAssets?.[0]?.file_url ?? null;
     const screens = (screenAssets ?? []).map(s => s.file_url);
 
