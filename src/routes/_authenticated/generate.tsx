@@ -29,7 +29,7 @@ type DbEnums = Database["public"]["Enums"];
 
 type Mode = "ryval" | "college";
 type ImageEngine = "nano" | "nano-pro";
-type CollegeEngine = "openai" | "nano-pro";
+type CollegeEngine = "nano-pro";
 
 type FormState = {
   slidesPerPost: number;
@@ -159,7 +159,7 @@ function Generate() {
   const [collegeBgs, setCollegeBgs] = useState<(string | null)[]>([]);
   const [collegeStatuses, setCollegeStatuses] = useState<CollegeSlideStatus[]>([]);
   const [collegeAssets, setCollegeAssets] = useState<{ logoUrl: string | null; screenUrl: string | null }>({ logoUrl: null, screenUrl: null });
-  const [collegeEngine, setCollegeEngine] = useState<CollegeEngine>("openai");
+  const [collegeEngine, setCollegeEngine] = useState<CollegeEngine>("nano-pro");
   const [collegeComposed, setCollegeComposed] = useState(false); // true when last render used openai composed mode
 
   // ── Ryval generation
@@ -216,7 +216,7 @@ function Generate() {
 
       toast.success(`${built.meta.school} ${built.meta.sport} — rendering 5 slides…`);
 
-      const useComposed = collegeEngine === "openai";
+      const useComposed = false;
       setCollegeComposed(useComposed);
 
       let fails = 0;
