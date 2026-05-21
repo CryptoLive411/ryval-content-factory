@@ -92,7 +92,7 @@ function Library() {
       <div className="rounded-xl border border-border overflow-hidden bg-card">
         <table className="w-full text-sm">
           <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-muted/30">
-            <tr><th className="text-left p-3">Hook</th><th className="text-left p-3">Category</th><th className="text-left p-3">Platform</th><th className="text-left p-3">Status</th><th className="text-left p-3">Created</th></tr>
+            <tr><th className="text-left p-3">Hook</th><th className="text-left p-3">Category</th><th className="text-left p-3">Platform</th><th className="text-left p-3">Status</th><th className="text-left p-3">Created</th><th className="text-right p-3">Download</th></tr>
           </thead>
           <tbody>
             {posts.map(p => (
@@ -102,9 +102,15 @@ function Library() {
                 <td className="p-3 text-muted-foreground capitalize">{p.platform?.replace(/_/g," ")}</td>
                 <td className="p-3"><span className={cn("px-2 py-1 rounded-full text-xs border", statusColor(p.status))}>{p.status}</span></td>
                 <td className="p-3 text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</td>
+                <td className="p-3 text-right">
+                  <Button size="sm" variant="outline" disabled={downloadingId === p.id} onClick={(e) => downloadPost(p, e)}>
+                    {downloadingId === p.id ? <Loader2 className="size-3 mr-1.5 animate-spin" /> : <Download className="size-3 mr-1.5" />}
+                    TikTok pack
+                  </Button>
+                </td>
               </tr>
             ))}
-            {!posts.length && <tr><td colSpan={5} className="p-10 text-center text-muted-foreground">No posts yet. Head to Generate.</td></tr>}
+            {!posts.length && <tr><td colSpan={6} className="p-10 text-center text-muted-foreground">No posts yet. Head to Generate.</td></tr>}
           </tbody>
         </table>
       </div>
