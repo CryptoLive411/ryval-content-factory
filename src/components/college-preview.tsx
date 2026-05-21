@@ -45,6 +45,15 @@ export function CollegePreview({
                     return <div key={li} style={{ color: isAcc ? accent : "#fff" }}>{line.toUpperCase()}</div>;
                   })}
                 </div>
+                {s.kind === "cta" && (
+                  <div className="ml-auto h-[70%] aspect-[9/19] rounded-[6px] border border-white/30 bg-black/60 overflow-hidden shadow-[0_0_10px_rgba(0,0,0,0.5)] flex items-center justify-center">
+                    {appScreenUrl ? (
+                      <img src={appScreenUrl} alt="" crossOrigin="anonymous" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-[6px] text-white/50 uppercase tracking-wider px-1 text-center">App preview</div>
+                    )}
+                  </div>
+                )}
               </div>
               {s.subline && (
                 <div className="text-[9px] font-bold uppercase tracking-wider mb-1">
@@ -55,8 +64,7 @@ export function CollegePreview({
               {s.chips && (
                 <div className="flex gap-1 text-[6px] font-bold uppercase">
                   {s.chips.map((c, ci) => (
-                    <div key={ci} className="flex-1 text-center">
-                      <div className="size-1.5 mx-auto mb-0.5" style={{ background: accent }} />
+                    <div key={ci} className="flex-1 text-center text-white/90">
                       {c.title}
                     </div>
                   ))}
