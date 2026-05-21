@@ -269,8 +269,20 @@ function Generate() {
       setCollegeBgs(new Array(built.slides.length).fill(null));
       setCollegeStatuses(built.slides.map(() => "pending" as const));
 
-      const assets = await fetchBrandAssets();
-      setCollegeAssets(assets);
+      const baseAssets = await fetchBrandAssets();
+      // Generate a school-specific crest in parallel with slide rendering.
+      let schoolLogoUrl: string | null = null;
+      genSchoolLogo({
+        data: { school: built.meta.school, accent: built.meta.accent },
+      })
+        .then((res: { url: string }) => {
+          schoolLogoUrl = res.url;
+          setCollegeAssets({ logoUrl: res.url, screenUrl: baseAssets.screenUrl });
+        })
+        .catch((e: unknown) => {
+          console.error("school logo failed", e);
+        });
+      setCollegeAssets({ logoUrl: schoolLogoUrl, screenUrl: baseAssets.screenUrl });
 
       toast.success(`${built.meta.school} ${built.meta.sport} — rendering 5 slides…`);
 
