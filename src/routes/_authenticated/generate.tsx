@@ -29,6 +29,7 @@ type DbEnums = Database["public"]["Enums"];
 
 type Mode = "ryval" | "college";
 type ImageEngine = "nano" | "nano-pro";
+type CollegeEngine = "openai" | "nano-pro";
 
 type FormState = {
   slidesPerPost: number;
