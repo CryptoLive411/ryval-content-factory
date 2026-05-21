@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: "/dashboard" });
+    if (data.session) throw redirect({ to: "/generate" });
   },
   component: LoginPage,
 });
@@ -28,7 +28,7 @@ function LoginPage() {
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email, password: pw, options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+          email, password: pw, options: { emailRedirectTo: `${window.location.origin}/generate` },
         });
         if (error) throw error;
         toast.success("Account created. Signing you in…");
@@ -36,7 +36,7 @@ function LoginPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
         if (error) throw error;
       }
-      nav({ to: "/dashboard" });
+      nav({ to: "/generate" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Auth failed");
     } finally { setLoading(false); }
