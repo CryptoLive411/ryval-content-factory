@@ -64,6 +64,7 @@ async function renderSlide(opts: {
   total: number;
   bgUrl: string | null;
   appScreenUrl: string | null;
+  logoUrl: string | null;
   cta: { tag: string; btn: string };
 }): Promise<Blob> {
   const canvas = document.createElement("canvas");
