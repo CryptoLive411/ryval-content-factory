@@ -49,6 +49,7 @@ export const STATUSES = [
 ] as const;
 
 export const CTA_TYPES = [
+  "join waitlist in bio",
   "join waitlist",
   "download app",
   "build profile",
