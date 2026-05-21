@@ -144,14 +144,6 @@ function Generate() {
         }
         setGenerated([...drafts]);
       }
-        const seeded: GeneratedPost[] = r.posts.map((p) => ({
-          ...p,
-          cta_type: form.ctaType,
-          bg_images: [] as (string | null)[],
-        }));
-        drafts.push(...seeded);
-        setGenerated([...drafts]);
-      }
 
       toast.success(`Generated ${drafts.length} drafts — rendering backgrounds…`);
 
