@@ -68,9 +68,10 @@ function Library() {
         actions={<Button onClick={exportApproved} className="bg-gradient-primary text-primary-foreground font-semibold"><Download className="size-4 mr-2" />Export Approved (CSV)</Button>}
       />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <FilterSelect label="Category" value={filters.category} onChange={v => setFilters(f => ({...f, category: v}))} options={CATEGORIES as any} />
-        <FilterSelect label="Platform" value={filters.platform} onChange={v => setFilters(f => ({...f, platform: v}))} options={PLATFORMS as any} />
-        <FilterSelect label="Status" value={filters.status} onChange={v => setFilters(f => ({...f, status: v}))} options={STATUSES as any} />
+        <FilterSelect label="Category" value={filters.category} onChange={(v: string) => setFilters(f => ({...f, category: v}))} options={CATEGORIES as any} />
+        <FilterSelect label="Platform" value={filters.platform} onChange={(v: string) => setFilters(f => ({...f, platform: v}))} options={PLATFORMS as any} />
+        <FilterSelect label="Status" value={filters.status} onChange={(v: string) => setFilters(f => ({...f, status: v}))} options={STATUSES as any} />
+
         <Button variant="outline" onClick={() => setFilters({ category: "all", platform: "all", status: "all" })}>Reset</Button>
       </div>
       <div className="rounded-xl border border-border overflow-hidden bg-card">

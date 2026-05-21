@@ -41,11 +41,12 @@ function Generate() {
         user_id: u.user!.id,
         hook: p.hook, slide_2: p.slide_2, slide_3: p.slide_3, slide_4: p.slide_4, slide_5: p.slide_5, slide_6: p.slide_6 ?? "",
         cta: p.cta, caption: p.caption, hashtags: p.hashtags,
-        category: form.category, audience: form.audience, platform: form.platform, account: form.account,
+        category: form.category as any, audience: form.audience as any, platform: form.platform as any, account: form.account as any,
         cta_type: form.ctaType, tone: form.tone, status: "drafted" as const,
       }));
-      const { error } = await supabase.from("posts").insert(rows);
+      const { error } = await supabase.from("posts").insert(rows as any);
       if (error) throw error;
+
     },
     onSuccess: () => {
       toast.success("Saved to library");
