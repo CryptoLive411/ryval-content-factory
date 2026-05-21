@@ -60,6 +60,51 @@ type GeneratedPost = {
 type SelectOption = { value: string; label: string } | string;
 type SelectKey = Exclude<keyof FormState, "includeAppScreen">;
 
+function DraftCard({ post, index }: { post: GeneratedPost; index: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState(false);
+  const onDownload = async () => {
+    if (!ref.current) return;
+    setBusy(true);
+    try {
+      const root = ref.current.querySelector<HTMLElement>("[data-carousel-root]");
+      if (!root) throw new Error("Preview not ready");
+      const slug = (post.hook ?? `post-${index + 1}`)
+        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || `post-${index + 1}`;
+      await exportPostForTikTok({
+        container: root,
+        caption: post.caption ?? "",
+        hashtags: post.hashtags ?? "",
+        filenameBase: slug,
+      });
+      toast.success("TikTok pack downloaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div ref={ref} className="rounded-xl border border-border bg-gradient-card p-5">
+      <div className="flex justify-between items-baseline mb-4 gap-3">
+        <h3 className="font-bold text-lg text-balance flex-1">{post.hook}</h3>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-muted-foreground">Draft #{index + 1}</span>
+          <Button size="sm" variant="outline" onClick={onDownload} disabled={busy}>
+            {busy ? <Loader2 className="size-3 mr-1.5 animate-spin" /> : <Download className="size-3 mr-1.5" />}
+            TikTok pack
+          </Button>
+        </div>
+      </div>
+      <CarouselPreview post={post} />
+      <div className="mt-4 text-sm text-muted-foreground space-y-1">
+        <p><span className="text-foreground font-medium">Caption:</span> {post.caption}</p>
+        <p className="text-primary">{post.hashtags}</p>
+      </div>
+    </div>
+  );
+}
+
 function Generate() {
   const qc = useQueryClient();
   const generate = useServerFn(generatePosts);
