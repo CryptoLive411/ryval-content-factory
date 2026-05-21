@@ -51,6 +51,7 @@ function drawCoverImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x:
 
 function ctaLabels(ctaType?: string | null) {
   const t = (ctaType ?? "").toLowerCase();
+  if (t.includes("bio"))      return { tag: "COMING SOON · WAITLIST IN BIO",   btn: "Join the waitlist in bio →" };
   if (t.includes("waitlist")) return { tag: "COMING SOON · JOIN THE WAITLIST", btn: "Join the waitlist →" };
   if (t.includes("coming"))   return { tag: "COMING SOON",                     btn: "Join the waitlist →" };
   if (t.includes("follow"))   return { tag: "FOLLOW FOR MORE",                 btn: "@ryval.app →" };

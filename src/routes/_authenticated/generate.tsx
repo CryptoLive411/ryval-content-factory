@@ -114,7 +114,7 @@ function Generate() {
     audience: "players",
     category: "harsh_truths",
     tone: "direct",
-    ctaType: "join waitlist",
+    ctaType: "join waitlist in bio",
     includeAppScreen: true,
   });
   const [generated, setGenerated] = useState<GeneratedPost[]>([]);
@@ -126,14 +126,22 @@ function Generate() {
 
       // Rotate variantIndex so each post hits a different persona + angle.
       const seedBase = Math.floor(Math.random() * 1000);
-      for (let i = 0; i < form.count; i += 1) {
-        const r = await generate({ data: { ...form, count: 1, variantIndex: seedBase + i } });
-        const seeded: GeneratedPost[] = r.posts.map((p) => ({
-          ...p,
-          cta_type: form.ctaType,
-          bg_images: [] as (string | null)[],
-        }));
-        drafts.push(...seeded);
+      const BATCH = 2;
+      for (let i = 0; i < form.count; i += BATCH) {
+        const batchSize = Math.min(BATCH, form.count - i);
+        const results = await Promise.all(
+          Array.from({ length: batchSize }, (_, k) =>
+            generate({ data: { ...form, count: 1, variantIndex: seedBase + i + k } }),
+          ),
+        );
+        for (const r of results) {
+          const seeded: GeneratedPost[] = r.posts.map((p) => ({
+            ...p,
+            cta_type: form.ctaType,
+            bg_images: [] as (string | null)[],
+          }));
+          drafts.push(...seeded);
+        }
         setGenerated([...drafts]);
       }
 

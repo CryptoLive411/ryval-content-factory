@@ -32,6 +32,7 @@ function LogoMark({ url, accent }: { url?: string | null; accent: string }) {
 
 function ctaLabels(ctaType?: string | null) {
   const t = (ctaType ?? "").toLowerCase();
+  if (t.includes("bio"))      return { tag: "Coming soon · Waitlist in bio", btn: "Join the waitlist in bio →" };
   if (t.includes("waitlist")) return { tag: "Coming soon · Join the waitlist", btn: "Join the waitlist →" };
   if (t.includes("coming"))   return { tag: "Coming soon", btn: "Join the waitlist →" };
   if (t.includes("follow"))   return { tag: "Follow for more", btn: "@ryval.app →" };
