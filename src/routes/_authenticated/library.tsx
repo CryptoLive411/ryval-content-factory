@@ -118,7 +118,7 @@ function Library() {
       <Dialog open={!!editing} onOpenChange={v => !v && setOpen(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Edit post</DialogTitle></DialogHeader>
-          {editing && <PostEditor post={editing} onSave={update.mutate} onDelete={() => del.mutate(editing.id)} />}
+          {editing && <PostEditor post={editing} onSave={update.mutate} onDelete={() => del.mutate(editing.id)} onDownload={() => downloadPost(editing)} downloading={downloadingId === editing.id} />}
         </DialogContent>
       </Dialog>
     </PageShell>
