@@ -170,6 +170,7 @@ function Generate() {
   const generate = useServerFn(generatePosts);
   const genBg = useServerFn(generateBackground);
   const genCollegeCopy = useServerFn(generateCollegeCopy);
+  const genSchoolLogo = useServerFn(generateSchoolLogo);
 
   const [mode, setMode] = useState<Mode>("ryval");
   const [imageEngine, setImageEngine] = useState<ImageEngine>("nano");
@@ -201,7 +202,7 @@ function Generate() {
     logoUrl: string | null;
     screenUrl: string | null;
   }>({ logoUrl: null, screenUrl: null });
-  const [collegeEngine, setCollegeEngine] = useState<CollegeEngine>("nano");
+  const [collegeEngine, setCollegeEngine] = useState<CollegeEngine>("nano-pro");
   const [collegeComposed, setCollegeComposed] = useState(false); // true when last render used openai composed mode
 
   // ── Ryval generation
