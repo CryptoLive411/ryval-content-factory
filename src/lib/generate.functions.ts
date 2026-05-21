@@ -221,21 +221,38 @@ Return strictly via the create_posts tool.`;
     return { posts: enriched };
   });
 
-// One short call per slide, fired in parallel from the client.
+// One short call per slide, fired sequentially from the client.
 export const generateBackground = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ prompt: z.string().min(3).max(2000) }).parse(input))
+  .inputValidator((input) =>
+    z.object({
+      prompt: z.string().min(3).max(2000),
+      model: z.enum(["nano", "nano-pro"]).optional(),
+      stylePreset: z.enum(["ryval", "college", "raw"]).optional(),
+    }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
     const { supabase, userId } = context;
 
+    const model = data.model === "nano-pro"
+      ? "google/gemini-3.1-flash-image-preview"
+      : "google/gemini-2.5-flash-image";
+
+    const styleSuffix =
+      data.stylePreset === "college"
+        ? `\n\nFormat: vertical 4:5 (1080x1350). Photoreal, cinematic, magazine-quality. Premium college athletics aesthetic — deep dramatic lighting, rich blacks, single accent of school blue. Strong subject, professional photographic depth of field. NO text, NO logos, NO school crests, NO trademarks, NO close-up identifiable faces.`
+        : data.stylePreset === "raw"
+        ? ""
+        : `\n\nFormat: vertical 4:5 aspect ratio composition optimized for a 1080x1350 social post — subject placed safely in the central 80% so nothing critical gets cropped. Style: premium soccer / student-athlete world — real settings like college campuses, soccer fields, locker rooms, athletic gyms, training grounds, stadiums, dorm rooms, bleachers. Either cinematic photographic OR clean flat-vector cartoon illustration OR bold editorial illustration — pick whatever best fits the scene. Dark moody palette: deep navy, charcoal, with a single electric blue accent. Strong subject, clear focal point, rich depth, professional lighting. NO text, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic gradients, NO corporate stock imagery (no suits, no boardrooms, no handshakes).`;
+
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
-        messages: [{ role: "user", content: `${data.prompt}\n\nFormat: vertical 4:5 aspect ratio composition optimized for a 1080x1350 social post — subject placed safely in the central 80% so nothing critical gets cropped. Style: premium soccer / student-athlete world — real settings like college campuses, soccer fields, locker rooms, athletic gyms, training grounds, stadiums, dorm rooms, bleachers. Either cinematic photographic OR clean flat-vector cartoon illustration OR bold editorial illustration — pick whatever best fits the scene. Dark moody palette: deep navy, charcoal, with a single electric blue accent. Strong subject, clear focal point, rich depth, professional lighting. NO text, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic gradients, NO corporate stock imagery (no suits, no boardrooms, no handshakes).` }],
+        model,
+        messages: [{ role: "user", content: `${data.prompt}${styleSuffix}` }],
         modalities: ["image", "text"],
       }),
     });
