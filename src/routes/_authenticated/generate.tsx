@@ -270,19 +270,7 @@ function Generate() {
             </Button>
           </div>
           {generated.map((p, i) => (
-            <div key={i} className="rounded-xl border border-border bg-gradient-card p-5">
-              <div className="flex justify-between items-baseline mb-4">
-                <h3 className="font-bold text-lg text-balance">{p.hook}</h3>
-                <span className="text-xs text-muted-foreground">Draft #{i + 1}</span>
-              </div>
-              <CarouselPreview post={p} />
-              <div className="mt-4 text-sm text-muted-foreground space-y-1">
-                <p>
-                  <span className="text-foreground font-medium">Caption:</span> {p.caption}
-                </p>
-                <p className="text-primary">{p.hashtags}</p>
-              </div>
-            </div>
+            <DraftCard key={i} post={p} index={i} />
           ))}
         </div>
       )}
