@@ -116,19 +116,14 @@ async function renderSlide(opts: {
     ctx.textBaseline = "top";
     ctx.fillText("RYVAL", PAD, PAD + 6);
   }
-  ctx.fillStyle = "rgba(255,255,255,0.65)";
-  ctx.font = "600 22px ui-sans-serif, system-ui, sans-serif";
-  ctx.textBaseline = "top";
-  const badge = opts.isCTA ? "CTA" : `${opts.index + 1}/${opts.total}`;
-  const bw = ctx.measureText(badge).width;
-  ctx.fillText(badge, W - PAD - bw, PAD + 14);
+  // Slide index removed per user request
 
   if (opts.isCTA) {
     // App screen mock area (top-center)
-    const phoneW = 280;
+    const phoneW = 400;
     const phoneH = Math.round(phoneW * (19 / 9));
     const phoneX = (W - phoneW) / 2;
-    const phoneY = 220;
+    const phoneY = 160;
     if (opts.appScreenUrl) {
       const img = await loadImage(opts.appScreenUrl);
       if (img) {
