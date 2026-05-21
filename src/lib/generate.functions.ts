@@ -174,19 +174,3 @@ export const generateBackground = createServerFn({ method: "POST" })
     if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
     return { url: supabase.storage.from("assets").getPublicUrl(path).data.publicUrl };
   });
-
-      }
-    });
-    await Promise.all(workers);
-
-    const enriched = posts.map((p, i) => ({
-      ...p,
-      bg_image_url: bgUrls[i],
-      logo_url: logoUrl,
-      app_screen_url: data.includeAppScreen && screens.length
-        ? screens[Math.floor(Math.random() * screens.length)]
-        : null,
-    }));
-
-    return { posts: enriched };
-  });
