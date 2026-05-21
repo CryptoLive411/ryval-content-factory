@@ -14,7 +14,292 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assets: {
+        Row: {
+          asset_type: string | null
+          created_at: string
+          description: string | null
+          file_name: string
+          file_url: string
+          id: string
+          tags: string[] | null
+          user_id: string
+        }
+        Insert: {
+          asset_type?: string | null
+          created_at?: string
+          description?: string | null
+          file_name: string
+          file_url: string
+          id?: string
+          tags?: string[] | null
+          user_id: string
+        }
+        Update: {
+          asset_type?: string | null
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          tags?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      performance: {
+        Row: {
+          comments: number
+          created_at: string
+          id: string
+          likes: number
+          link_clicks: number
+          notes: string | null
+          post_id: string
+          profile_visits: number
+          saves: number
+          shares: number
+          signups: number
+          user_id: string
+          views: number
+        }
+        Insert: {
+          comments?: number
+          created_at?: string
+          id?: string
+          likes?: number
+          link_clicks?: number
+          notes?: string | null
+          post_id: string
+          profile_visits?: number
+          saves?: number
+          shares?: number
+          signups?: number
+          user_id: string
+          views?: number
+        }
+        Update: {
+          comments?: number
+          created_at?: string
+          id?: string
+          likes?: number
+          link_clicks?: number
+          notes?: string | null
+          post_id?: string
+          profile_visits?: number
+          saves?: number
+          shares?: number
+          signups?: number
+          user_id?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planner_entries: {
+        Row: {
+          account: Database["public"]["Enums"]["account"] | null
+          created_at: string
+          id: string
+          notes: string | null
+          plan_date: string
+          plan_time: string | null
+          platform: Database["public"]["Enums"]["platform"] | null
+          post_id: string | null
+          status: Database["public"]["Enums"]["post_status"]
+          user_id: string
+        }
+        Insert: {
+          account?: Database["public"]["Enums"]["account"] | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plan_date: string
+          plan_time?: string | null
+          platform?: Database["public"]["Enums"]["platform"] | null
+          post_id?: string | null
+          status?: Database["public"]["Enums"]["post_status"]
+          user_id: string
+        }
+        Update: {
+          account?: Database["public"]["Enums"]["account"] | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plan_date?: string
+          plan_time?: string | null
+          platform?: Database["public"]["Enums"]["platform"] | null
+          post_id?: string | null
+          status?: Database["public"]["Enums"]["post_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planner_entries_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          account: Database["public"]["Enums"]["account"] | null
+          asset_id: string | null
+          audience: Database["public"]["Enums"]["audience"] | null
+          caption: string | null
+          category: Database["public"]["Enums"]["category"] | null
+          created_at: string
+          cta: string | null
+          cta_type: string | null
+          hashtags: string | null
+          hook: string
+          id: string
+          is_winner: boolean
+          notes: string | null
+          platform: Database["public"]["Enums"]["platform"] | null
+          scheduled_date: string | null
+          slide_2: string | null
+          slide_3: string | null
+          slide_4: string | null
+          slide_5: string | null
+          slide_6: string | null
+          status: Database["public"]["Enums"]["post_status"]
+          template_id: string | null
+          tone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account?: Database["public"]["Enums"]["account"] | null
+          asset_id?: string | null
+          audience?: Database["public"]["Enums"]["audience"] | null
+          caption?: string | null
+          category?: Database["public"]["Enums"]["category"] | null
+          created_at?: string
+          cta?: string | null
+          cta_type?: string | null
+          hashtags?: string | null
+          hook?: string
+          id?: string
+          is_winner?: boolean
+          notes?: string | null
+          platform?: Database["public"]["Enums"]["platform"] | null
+          scheduled_date?: string | null
+          slide_2?: string | null
+          slide_3?: string | null
+          slide_4?: string | null
+          slide_5?: string | null
+          slide_6?: string | null
+          status?: Database["public"]["Enums"]["post_status"]
+          template_id?: string | null
+          tone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account?: Database["public"]["Enums"]["account"] | null
+          asset_id?: string | null
+          audience?: Database["public"]["Enums"]["audience"] | null
+          caption?: string | null
+          category?: Database["public"]["Enums"]["category"] | null
+          created_at?: string
+          cta?: string | null
+          cta_type?: string | null
+          hashtags?: string | null
+          hook?: string
+          id?: string
+          is_winner?: boolean
+          notes?: string | null
+          platform?: Database["public"]["Enums"]["platform"] | null
+          scheduled_date?: string | null
+          slide_2?: string | null
+          slide_3?: string | null
+          slide_4?: string | null
+          slide_5?: string | null
+          slide_6?: string | null
+          status?: Database["public"]["Enums"]["post_status"]
+          template_id?: string | null
+          tone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prompt_templates: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          name: string
+          prompt_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          prompt_text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          prompt_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      templates: {
+        Row: {
+          accent_color: string
+          background_style: string
+          created_at: string
+          cta_style: string
+          font_style: string
+          id: string
+          logo_position: string
+          template_name: string
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string
+          background_style?: string
+          created_at?: string
+          cta_style?: string
+          font_style?: string
+          id?: string
+          logo_position?: string
+          template_name: string
+          user_id: string
+        }
+        Update: {
+          accent_color?: string
+          background_style?: string
+          created_at?: string
+          cta_style?: string
+          font_style?: string
+          id?: string
+          logo_position?: string
+          template_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +308,35 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      account: "ryval_main" | "recruiting_truth" | "global_pathway" | "founder"
+      audience:
+        | "players"
+        | "parents"
+        | "coaches"
+        | "academies"
+        | "international"
+      category:
+        | "harsh_truths"
+        | "highlight_tips"
+        | "coach_pov"
+        | "parent_education"
+        | "international_pathway"
+        | "soft_pitch"
+        | "launch_countdown"
+        | "product_feature"
+        | "educational"
+        | "pain_point"
+      platform: "tiktok" | "instagram" | "youtube_shorts" | "linkedin"
+      post_status:
+        | "idea"
+        | "drafted"
+        | "needs_edit"
+        | "approved"
+        | "designed"
+        | "scheduled"
+        | "posted"
+        | "winner"
+        | "reuse_later"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +463,33 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      account: ["ryval_main", "recruiting_truth", "global_pathway", "founder"],
+      audience: ["players", "parents", "coaches", "academies", "international"],
+      category: [
+        "harsh_truths",
+        "highlight_tips",
+        "coach_pov",
+        "parent_education",
+        "international_pathway",
+        "soft_pitch",
+        "launch_countdown",
+        "product_feature",
+        "educational",
+        "pain_point",
+      ],
+      platform: ["tiktok", "instagram", "youtube_shorts", "linkedin"],
+      post_status: [
+        "idea",
+        "drafted",
+        "needs_edit",
+        "approved",
+        "designed",
+        "scheduled",
+        "posted",
+        "winner",
+        "reuse_later",
+      ],
+    },
   },
 } as const
