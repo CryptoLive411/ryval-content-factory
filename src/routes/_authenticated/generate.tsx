@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Sparkles, Loader2, Download, GraduationCap, Megaphone } from "lucide-react";
-import { generatePosts, generateBackground, generateCollegeCopy } from "@/lib/generate.functions";
+import { generatePosts, generateBackground, generateCollegeCopy, generateSchoolLogo } from "@/lib/generate.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { PageHeader, PageShell } from "@/components/page-shell";
@@ -170,6 +170,7 @@ function Generate() {
   const generate = useServerFn(generatePosts);
   const genBg = useServerFn(generateBackground);
   const genCollegeCopy = useServerFn(generateCollegeCopy);
+  const genSchoolLogo = useServerFn(generateSchoolLogo);
 
   const [mode, setMode] = useState<Mode>("ryval");
   const [imageEngine, setImageEngine] = useState<ImageEngine>("nano");
@@ -201,7 +202,7 @@ function Generate() {
     logoUrl: string | null;
     screenUrl: string | null;
   }>({ logoUrl: null, screenUrl: null });
-  const [collegeEngine, setCollegeEngine] = useState<CollegeEngine>("nano");
+  const [collegeEngine, setCollegeEngine] = useState<CollegeEngine>("nano-pro");
   const [collegeComposed, setCollegeComposed] = useState(false); // true when last render used openai composed mode
 
   // ── Ryval generation
@@ -268,8 +269,20 @@ function Generate() {
       setCollegeBgs(new Array(built.slides.length).fill(null));
       setCollegeStatuses(built.slides.map(() => "pending" as const));
 
-      const assets = await fetchBrandAssets();
-      setCollegeAssets(assets);
+      const baseAssets = await fetchBrandAssets();
+      // Generate a school-specific crest in parallel with slide rendering.
+      let schoolLogoUrl: string | null = null;
+      genSchoolLogo({
+        data: { school: built.meta.school, accent: built.meta.accent },
+      })
+        .then((res: { url: string }) => {
+          schoolLogoUrl = res.url;
+          setCollegeAssets({ logoUrl: res.url, screenUrl: baseAssets.screenUrl });
+        })
+        .catch((e: unknown) => {
+          console.error("school logo failed", e);
+        });
+      setCollegeAssets({ logoUrl: schoolLogoUrl, screenUrl: baseAssets.screenUrl });
 
       toast.success(`${built.meta.school} ${built.meta.sport} — rendering 5 slides…`);
 

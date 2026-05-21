@@ -320,17 +320,17 @@ export const generateCollegeCopy = createServerFn({ method: "POST" })
             compete_chips: {
               type: "array", minItems: 3, maxItems: 3,
               items: { type: "object", properties: { title: { type: "string" }, body: { type: "string" } }, required: ["title", "body"], additionalProperties: false },
-              description: "3 chips with REAL, specific stats/facts about this school's program (titles, body 6-10 words). Mention real notable accomplishments if you know them; otherwise stay specific but truthful (e.g. conference standing, alumni who went pro, championship history).",
+              description: "3 chips with REAL, SPECIFIC, NUMERIC stats about this school's program. Title is a short uppercase stat headline (e.g. '17 NCAA TOURNAMENTS', '4 NATIONAL TITLES', '38 PROS DEVELOPED'). Body is one factual 6-12 word sentence with a year, number, or named accomplishment. NEVER use generic filler like 'NCAA POWERHOUSE' or 'PRO PIPELINE'. If unsure of an exact number, pick a plausible specific one and phrase it accurately for this program.",
             },
             environment_chips: {
               type: "array", minItems: 3, maxItems: 3,
               items: { type: "object", properties: { title: { type: "string" }, body: { type: "string" } }, required: ["title", "body"], additionalProperties: false },
-              description: "3 facility/training chips specific to this school (stadium name, training facilities, weight room, etc.)",
+              description: "3 chips naming the school's ACTUAL facilities by name (e.g. 'KOSKINEN STADIUM', 'YEARDLEY LOVE CENTER', 'JOHN A. BLACKBURN INSTITUTE'). Body: short 6-10 word factual line about that facility.",
             },
             more_than_chips: {
               type: "array", minItems: 3, maxItems: 3,
               items: { type: "object", properties: { title: { type: "string" }, body: { type: "string" } }, required: ["title", "body"], additionalProperties: false },
-              description: "3 academic/network chips specific to this school's reputation (ranking, alumni network, region).",
+              description: "3 academic chips with REAL specifics: world ranking number, famous alumni name, named program (e.g. '#3 US NEWS RANKING', '162 RHODES SCHOLARS', 'WHARTON / FUQUA / ROSS pipeline'). Numeric / named, never generic.",
             },
             cta_subline: { type: "string", description: 'Final CTA subline, e.g. DM "RECRUIT"' },
             caption: { type: "string", description: "Short TikTok caption, 1-2 lines, mentions the school+sport. Do not stuff." },
@@ -376,6 +376,52 @@ Use REAL knowledge about this school and program when you have it: actual confer
     return JSON.parse(call.function.arguments);
   });
 
+// ──────────────────────────────── School crest / logo generation ────────────────────────────────
+export const generateSchoolLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        school: z.string().min(1).max(120),
+        accent: z.string().min(3).max(20),
+        motif: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+
+    const prompt = `Original athletic monogram crest INSPIRED BY ${data.school}'s color identity and traditional collegiate motif (${data.motif ?? "shield with bold serif letterform"}). Clean vector-style emblem, centered, on a SOLID WHITE BACKGROUND, premium college sports branding aesthetic. Primary color: ${data.accent}. Add a tasteful secondary tone (white / cream / black) for depth. Bold, simple, instantly readable at small sizes — like a varsity team patch. Symmetrical, sharp edges, no gradients, no photographic textures, no 3D, no busy details. ABSOLUTELY NO real trademarks, NO existing school crests, NO NCAA marks, NO copyrighted logos. Do not include any text other than (optionally) a single bold initial letter. Square 1:1 composition with generous padding around the emblem.`;
+
+    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3.1-flash-image-preview",
+        messages: [{ role: "user", content: prompt }],
+        modalities: ["image", "text"],
+      }),
+    });
+    if (r.status === 429) throw new Error("Rate limit on image gateway. Wait a moment.");
+    if (r.status === 402) throw new Error("AI credits exhausted.");
+    if (!r.ok) throw new Error(`Image gateway error (${r.status})`);
+    const j = await r.json();
+    const dataUrl: string | undefined = j.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (!dataUrl?.startsWith("data:image/")) throw new Error("No logo image returned");
+    const [meta, b64] = dataUrl.split(",");
+    const mime = meta.slice(5, meta.indexOf(";"));
+    const ext = mime.split("/")[1] ?? "png";
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const path = `${userId}/generated/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("assets")
+      .upload(path, bytes, { contentType: mime });
+    if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
+    return { url: supabase.storage.from("assets").getPublicUrl(path).data.publicUrl };
+  });
+
 // One short call per slide, fired sequentially from the client.
 export const generateBackground = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -395,7 +441,7 @@ export const generateBackground = createServerFn({ method: "POST" })
       data.stylePreset === "college-composed"
         ? "" // prompt already fully describes the composed slide
         : data.stylePreset === "college"
-          ? `\n\nFormat: vertical 4:5 (1080x1350). Photoreal, cinematic, magazine-quality. Premium college athletics aesthetic — deep dramatic lighting, rich blacks, single accent of school blue. Strong subject, professional photographic depth of field. NO text, NO logos, NO school crests, NO trademarks, NO close-up identifiable faces.`
+          ? `\n\nFormat: vertical 4:5 (1080x1350). Shot on a Canon R5 with a 50mm prime, f/1.8, ultra sharp focus, shallow depth of field, photoreal — Sports Illustrated / ESPN cover quality, NOT illustration, NOT CGI, NOT rendered. Cinematic dramatic stadium lighting, deep saturated colors, crisp athletic detail (sweat, fabric texture, grass blades, stitched seams), realistic human anatomy and proportions. Players must wear plausible authentic team uniforms in the school's real primary colors. NO text, NO logos, NO school crests, NO trademarks, NO jersey numbers from real pros, NO recognizable celebrity faces.`
           : data.stylePreset === "raw"
             ? ""
             : `\n\nFormat: vertical 4:5 aspect ratio composition optimized for a 1080x1350 social post — subject placed safely in the central 80% so nothing critical gets cropped. Style: premium soccer / student-athlete world — real settings like college campuses, soccer fields, locker rooms, athletic gyms, training grounds, stadiums, dorm rooms, bleachers. Either cinematic photographic OR clean flat-vector cartoon illustration OR bold editorial illustration — pick whatever best fits the scene. Dark moody palette: deep navy, charcoal, with a single electric blue accent. Strong subject, clear focal point, rich depth, professional lighting. NO text, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic gradients, NO corporate stock imagery (no suits, no boardrooms, no handshakes).`;
