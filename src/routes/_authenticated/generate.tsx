@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Download } from "lucide-react";
 import { generatePosts, generateBackground } from "@/lib/generate.functions";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -20,6 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { CarouselPreview } from "@/components/carousel-preview";
 import { CATEGORIES, PLATFORMS, ACCOUNTS, AUDIENCES, TONES, CTA_TYPES } from "@/lib/ryval";
+import { exportPostForTikTok } from "@/lib/tiktok-export";
 
 export const Route = createFileRoute("/_authenticated/generate")({ component: Generate });
 
