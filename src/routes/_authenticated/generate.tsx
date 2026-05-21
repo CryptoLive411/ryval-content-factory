@@ -26,7 +26,7 @@ function Generate() {
     audience: "players", category: "harsh_truths",
     tone: "direct", ctaType: "join waitlist", includeAppScreen: true,
   });
-  const [generated, setGenerated] = useState<Array<Record<string, string | null>>>([]);
+  const [generated, setGenerated] = useState<Array<Record<string, any>>>([]);
 
   const mut = useMutation({
     mutationFn: async () => {
