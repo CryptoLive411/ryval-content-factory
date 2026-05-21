@@ -253,7 +253,17 @@ function Generate() {
       };
       if (!input.school) throw new Error("Enter a school name");
 
-      const built = buildCollegePost(input);
+      toast.message(`Writing ${input.school} copy…`);
+      let copy = {};
+      try {
+        copy = await genCollegeCopy({
+          data: { school: input.school, sport: input.sport, conference: input.conference },
+        });
+      } catch (e) {
+        console.error("college copy failed, using defaults", e);
+      }
+
+      const built = buildCollegePost(input, copy);
       setCollegePost(built);
       setCollegeBgs(new Array(built.slides.length).fill(null));
       setCollegeStatuses(built.slides.map(() => "pending" as const));
