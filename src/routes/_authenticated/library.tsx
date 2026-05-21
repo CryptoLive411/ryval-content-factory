@@ -140,7 +140,7 @@ function FilterSelect({ label, value, onChange, options }: any) {
   );
 }
 
-function PostEditor({ post, onSave, onDelete }: any) {
+function PostEditor({ post, onSave, onDelete, onDownload, downloading }: any) {
   const [p, setP] = useState(post);
   const f = (k: string) => (e: any) => setP({ ...p, [k]: e.target ? e.target.value : e });
   return (
