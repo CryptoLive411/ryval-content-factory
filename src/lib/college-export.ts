@@ -139,23 +139,20 @@ function drawChipRow(ctx: CanvasRenderingContext2D, chips: { title: string; body
   }
   chips.forEach((c, i) => {
     const cx = PAD + colW * i + colW / 2;
-    // small accent square icon
-    ctx.fillStyle = accent;
-    ctx.fillRect(cx - 16, top + 8, 32, 32);
     // title
     ctx.fillStyle = "#ffffff";
-    setSans(ctx, 800, 18);
+    setSans(ctx, 800, 20);
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     const titleLines = wrap(ctx, c.title.toUpperCase(), colW - 24);
-    let ty = top + 60;
-    for (const tl of titleLines) { ctx.fillText(tl, cx, ty); ty += 22; }
+    let ty = top + 24;
+    for (const tl of titleLines) { ctx.fillText(tl, cx, ty); ty += 24; }
     // body
     if (c.body) {
-      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.fillStyle = "rgba(255,255,255,0.78)";
       setSans(ctx, 400, 15);
       const lines = wrap(ctx, c.body, colW - 24);
-      let by = ty + 6;
+      let by = ty + 8;
       for (const l of lines) { ctx.fillText(l, cx, by); by += 19; }
     }
   });
