@@ -120,10 +120,10 @@ async function renderSlide(opts: {
 
   if (opts.isCTA) {
     // App screen mock area (top-center)
-    const phoneW = 280;
+    const phoneW = 420;
     const phoneH = Math.round(phoneW * (19 / 9));
     const phoneX = (W - phoneW) / 2;
-    const phoneY = 220;
+    const phoneY = 160;
     if (opts.appScreenUrl) {
       const img = await loadImage(opts.appScreenUrl);
       if (img) {
