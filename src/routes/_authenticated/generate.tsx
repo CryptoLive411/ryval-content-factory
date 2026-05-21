@@ -31,23 +31,36 @@ function Generate() {
   const mut = useMutation({
     mutationFn: async () => {
       const r = await generate({ data: form });
-      setGenerated(r.posts as any);
+      // Seed with cta_type so the preview shows correct CTA labels immediately.
+      const seeded = r.posts.map(p => ({ ...p, cta_type: form.ctaType, bg_images: [] as (string | null)[] }));
+      setGenerated(seeded as any);
       toast.success(`Generated ${r.posts.length} drafts — rendering backgrounds…`);
-      // Fire image generation in parallel; update each card as it returns.
-      await Promise.all(r.posts.map(async (p, i) => {
-        const prompt = (p as any).imagePrompt as string | undefined;
-        if (!prompt) return;
-        try {
-          const { url } = await genBg({ data: { prompt } });
-          setGenerated(prev => {
-            const next = [...prev];
-            if (next[i]) next[i] = { ...next[i], bg_image_url: url };
-            return next;
-          });
-        } catch (e) {
-          console.error("bg gen failed for post", i, e);
-        }
-      }));
+
+      // Fire one image-gen per slide per post, all in parallel.
+      const tasks: Promise<void>[] = [];
+      r.posts.forEach((p: any, postIdx: number) => {
+        const prompts: string[] = p.slide_image_prompts ?? [];
+        prompts.forEach((prompt, slideIdx) => {
+          if (!prompt) return;
+          tasks.push((async () => {
+            try {
+              const { url } = await genBg({ data: { prompt } });
+              setGenerated(prev => {
+                const next = [...prev];
+                const post = next[postIdx];
+                if (!post) return prev;
+                const bgs = [...((post.bg_images as any) ?? [])];
+                bgs[slideIdx] = url;
+                next[postIdx] = { ...post, bg_images: bgs as any };
+                return next;
+              });
+            } catch (e) {
+              console.error("bg gen failed", postIdx, slideIdx, e);
+            }
+          })());
+        });
+      });
+      await Promise.all(tasks);
       return r;
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Generation failed"),
@@ -62,7 +75,9 @@ function Generate() {
         user_id: u.user!.id,
         hook: p.hook ?? "", slide_2: p.slide_2 ?? "", slide_3: p.slide_3 ?? "", slide_4: p.slide_4 ?? "", slide_5: p.slide_5 ?? "", slide_6: p.slide_6 ?? "",
         cta: p.cta ?? "", caption: p.caption ?? "", hashtags: p.hashtags ?? "",
-        bg_image_url: p.bg_image_url ?? null, logo_url: p.logo_url ?? null, app_screen_url: p.app_screen_url ?? null,
+        bg_images: (p.bg_images as any) ?? [],
+        bg_image_url: ((p.bg_images as any)?.[0] as string | undefined) ?? null,
+        logo_url: p.logo_url ?? null, app_screen_url: p.app_screen_url ?? null,
         category: form.category as any, audience: form.audience as any, platform: form.platform as any, account: form.account as any,
         cta_type: form.ctaType, tone: form.tone, status: "drafted" as const,
       }));
@@ -78,6 +93,7 @@ function Generate() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Save failed"),
   });
+
 
   const sel = (label: string, key: keyof typeof form, opts: ReadonlyArray<{ value: string; label: string } | string>) => (
     <div className="space-y-2">
