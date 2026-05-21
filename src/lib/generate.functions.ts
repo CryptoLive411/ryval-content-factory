@@ -13,7 +13,7 @@ const Input = z.object({
   ctaType: z.string(),
   includeAppScreen: z.boolean(),
   promptOverride: z.string().optional(),
-  variantIndex: z.number().min(0).max(200).optional(),
+  variantIndex: z.number().min(0).max(100000).optional(),
 });
 
 // Rotate persona + angle each call so a batch of count:1 generations doesn't repeat.
