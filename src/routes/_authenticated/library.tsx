@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CATEGORIES, PLATFORMS, STATUSES, statusColor } from "@/lib/ryval";
-import { postsToCSV, downloadCSV } from "@/lib/csv";
+import { exportPostForTikTok } from "@/lib/tiktok-export";
 import { CarouselPreview } from "@/components/carousel-preview";
 import { cn } from "@/lib/utils";
 
@@ -51,11 +51,26 @@ function Library() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["posts"] }); toast.success("Deleted"); setOpen(null); },
   });
 
-  const exportApproved = () => {
-    const rows = posts.filter(p => ["approved","designed","scheduled"].includes(p.status));
-    if (!rows.length) return toast.error("No approved posts");
-    downloadCSV(`ryval-posts-${Date.now()}.csv`, postsToCSV(rows as any));
-    toast.success(`Exported ${rows.length} posts`);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const downloadPost = async (p: any, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setDownloadingId(p.id);
+    try {
+      const slug = (p.hook ?? `post-${p.id.slice(0, 6)}`)
+        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || `post-${p.id.slice(0, 6)}`;
+      await exportPostForTikTok({
+        post: p,
+        caption: p.caption ?? "",
+        hashtags: p.hashtags ?? "",
+        filenameBase: slug,
+      });
+      toast.success("TikTok pack downloaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const editing = posts.find(p => p.id === open);
@@ -65,8 +80,8 @@ function Library() {
       <PageHeader
         title="Post Library"
         subtitle={`${posts.length} posts`}
-        actions={<Button onClick={exportApproved} className="bg-gradient-primary text-primary-foreground font-semibold"><Download className="size-4 mr-2" />Export Approved (CSV)</Button>}
       />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <FilterSelect label="Category" value={filters.category} onChange={(v: string) => setFilters(f => ({...f, category: v}))} options={CATEGORIES as any} />
         <FilterSelect label="Platform" value={filters.platform} onChange={(v: string) => setFilters(f => ({...f, platform: v}))} options={PLATFORMS as any} />
@@ -77,7 +92,7 @@ function Library() {
       <div className="rounded-xl border border-border overflow-hidden bg-card">
         <table className="w-full text-sm">
           <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-muted/30">
-            <tr><th className="text-left p-3">Hook</th><th className="text-left p-3">Category</th><th className="text-left p-3">Platform</th><th className="text-left p-3">Status</th><th className="text-left p-3">Created</th></tr>
+            <tr><th className="text-left p-3">Hook</th><th className="text-left p-3">Category</th><th className="text-left p-3">Platform</th><th className="text-left p-3">Status</th><th className="text-left p-3">Created</th><th className="text-right p-3">Download</th></tr>
           </thead>
           <tbody>
             {posts.map(p => (
@@ -87,9 +102,15 @@ function Library() {
                 <td className="p-3 text-muted-foreground capitalize">{p.platform?.replace(/_/g," ")}</td>
                 <td className="p-3"><span className={cn("px-2 py-1 rounded-full text-xs border", statusColor(p.status))}>{p.status}</span></td>
                 <td className="p-3 text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</td>
+                <td className="p-3 text-right">
+                  <Button size="sm" variant="outline" disabled={downloadingId === p.id} onClick={(e) => downloadPost(p, e)}>
+                    {downloadingId === p.id ? <Loader2 className="size-3 mr-1.5 animate-spin" /> : <Download className="size-3 mr-1.5" />}
+                    TikTok pack
+                  </Button>
+                </td>
               </tr>
             ))}
-            {!posts.length && <tr><td colSpan={5} className="p-10 text-center text-muted-foreground">No posts yet. Head to Generate.</td></tr>}
+            {!posts.length && <tr><td colSpan={6} className="p-10 text-center text-muted-foreground">No posts yet. Head to Generate.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -97,7 +118,7 @@ function Library() {
       <Dialog open={!!editing} onOpenChange={v => !v && setOpen(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Edit post</DialogTitle></DialogHeader>
-          {editing && <PostEditor post={editing} onSave={update.mutate} onDelete={() => del.mutate(editing.id)} />}
+          {editing && <PostEditor post={editing} onSave={update.mutate} onDelete={() => del.mutate(editing.id)} onDownload={() => downloadPost(editing)} downloading={downloadingId === editing.id} />}
         </DialogContent>
       </Dialog>
     </PageShell>
@@ -119,7 +140,7 @@ function FilterSelect({ label, value, onChange, options }: any) {
   );
 }
 
-function PostEditor({ post, onSave, onDelete }: any) {
+function PostEditor({ post, onSave, onDelete, onDownload, downloading }: any) {
   const [p, setP] = useState(post);
   const f = (k: string) => (e: any) => setP({ ...p, [k]: e.target ? e.target.value : e });
   return (
@@ -141,9 +162,15 @@ function PostEditor({ post, onSave, onDelete }: any) {
         <div><Label className="text-xs">Scheduled date</Label><Input type="datetime-local" value={p.scheduled_date?.slice(0,16) ?? ""} onChange={e => setP({...p, scheduled_date: e.target.value ? new Date(e.target.value).toISOString() : null})} /></div>
       </div>
       <div><Label className="text-xs">Notes</Label><Textarea value={p.notes ?? ""} onChange={f("notes")} /></div>
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center gap-2 flex-wrap">
         <Button variant="destructive" onClick={onDelete}>Delete</Button>
-        <Button onClick={() => onSave(p)} className="bg-gradient-primary text-primary-foreground font-semibold">Save</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onDownload} disabled={downloading}>
+            {downloading ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <Download className="size-4 mr-1.5" />}
+            TikTok pack
+          </Button>
+          <Button onClick={() => onSave(p)} className="bg-gradient-primary text-primary-foreground font-semibold">Save</Button>
+        </div>
       </div>
     </div>
   );
