@@ -216,12 +216,22 @@ function Generate() {
 
       toast.success(`${built.meta.school} ${built.meta.sport} — rendering 5 slides…`);
 
+      const useComposed = collegeEngine === "openai";
+      setCollegeComposed(useComposed);
+
       let fails = 0;
       for (let i = 0; i < built.slides.length; i++) {
         setCollegeStatuses(prev => prev.map((s, idx) => idx === i ? "loading" : s));
         try {
+          const prompt = useComposed
+            ? buildComposedPrompt(built.slides[i], built.meta)
+            : built.slides[i].imagePrompt;
           const { url } = await withRetry(
-            () => genBg({ data: { prompt: built.slides[i].imagePrompt, model: "nano-pro", stylePreset: "college" } }),
+            () => genBg({ data: {
+              prompt,
+              model: collegeEngine,
+              stylePreset: useComposed ? "college-composed" : "college",
+            } }),
             3,
           );
           setCollegeBgs(prev => { const n = [...prev]; n[i] = url; return n; });
