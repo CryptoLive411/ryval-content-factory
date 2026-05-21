@@ -19,8 +19,9 @@ import { CarouselPreview } from "@/components/carousel-preview";
 import { CollegePreview, type CollegeSlideStatus } from "@/components/college-preview";
 import { CATEGORIES, PLATFORMS, ACCOUNTS, AUDIENCES, TONES, CTA_TYPES } from "@/lib/ryval";
 import { exportPostForTikTok } from "@/lib/tiktok-export";
-import { buildCollegePost, type CollegePost } from "@/lib/college";
+import { buildCollegePost, buildComposedPrompt, type CollegePost } from "@/lib/college";
 import { exportCollegePost } from "@/lib/college-export";
+import JSZip from "jszip";
 
 export const Route = createFileRoute("/_authenticated/generate")({ component: Generate });
 
