@@ -30,38 +30,46 @@ function Generate() {
 
   const mut = useMutation({
     mutationFn: async () => {
-      const r = await generate({ data: form });
-      // Seed with cta_type so the preview shows correct CTA labels immediately.
-      const seeded = r.posts.map(p => ({ ...p, cta_type: form.ctaType, bg_images: [] as (string | null)[] }));
-      setGenerated(seeded as any);
-      toast.success(`Generated ${r.posts.length} drafts — rendering backgrounds…`);
+      setGenerated([]);
+      const drafts: Array<Record<string, any>> = [];
 
-      // Fire one image-gen per slide per post, all in parallel.
-      const tasks: Promise<void>[] = [];
-      r.posts.forEach((p: any, postIdx: number) => {
-        const prompts: string[] = p.slide_image_prompts ?? [];
-        prompts.forEach((prompt, slideIdx) => {
-          if (!prompt) return;
-          tasks.push((async () => {
-            try {
-              const { url } = await genBg({ data: { prompt } });
-              setGenerated(prev => {
-                const next = [...prev];
-                const post = next[postIdx];
-                if (!post) return prev;
-                const bgs = [...((post.bg_images as any) ?? [])];
-                bgs[slideIdx] = url;
-                next[postIdx] = { ...post, bg_images: bgs as any };
-                return next;
-              });
-            } catch (e) {
-              console.error("bg gen failed", postIdx, slideIdx, e);
-            }
-          })());
-        });
-      });
-      await Promise.all(tasks);
-      return r;
+      // Generate one post per server request so larger batches don't hit upstream timeouts.
+      for (let i = 0; i < form.count; i += 1) {
+        const r = await generate({ data: { ...form, count: 1 } });
+        const seeded = r.posts.map(p => ({ ...p, cta_type: form.ctaType, bg_images: [] as (string | null)[] }));
+        drafts.push(...seeded);
+        setGenerated([...drafts]);
+      }
+
+      toast.success(`Generated ${drafts.length} drafts — rendering backgrounds…`);
+
+      const tasks = drafts.flatMap((p: any, postIdx: number) =>
+        ((p.slide_image_prompts ?? []) as string[])
+          .map((prompt, slideIdx) => ({ prompt, postIdx, slideIdx }))
+          .filter(task => Boolean(task.prompt))
+      );
+
+      // Keep image generation bounded too; this avoids flooding the gateway on big batches.
+      for (let i = 0; i < tasks.length; i += 3) {
+        await Promise.all(tasks.slice(i, i + 3).map(async ({ prompt, postIdx, slideIdx }) => {
+          try {
+            const { url } = await genBg({ data: { prompt } });
+            setGenerated(prev => {
+              const next = [...prev];
+              const post = next[postIdx];
+              if (!post) return prev;
+              const bgs = [...((post.bg_images as any) ?? [])];
+              bgs[slideIdx] = url;
+              next[postIdx] = { ...post, bg_images: bgs as any };
+              return next;
+            });
+          } catch (e) {
+            console.error("bg gen failed", postIdx, slideIdx, e);
+          }
+        }));
+      }
+
+      return { posts: drafts };
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Generation failed"),
   });
