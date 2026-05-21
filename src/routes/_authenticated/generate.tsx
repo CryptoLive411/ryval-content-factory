@@ -12,7 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { CarouselPreview } from "@/components/carousel-preview";
@@ -44,8 +48,11 @@ type FormState = {
 
 type GeneratedPost = {
   hook?: string | null;
-  slide_2?: string | null; slide_3?: string | null;
-  slide_4?: string | null; slide_5?: string | null; slide_6?: string | null;
+  slide_2?: string | null;
+  slide_3?: string | null;
+  slide_4?: string | null;
+  slide_5?: string | null;
+  slide_6?: string | null;
   cta?: string | null;
   caption?: string | null;
   hashtags?: string | null;
@@ -60,13 +67,14 @@ type GeneratedPost = {
 type SelectOption = { value: string; label: string } | string;
 type SelectKey = Exclude<keyof FormState, "includeAppScreen">;
 
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
   let lastErr: unknown;
   for (let i = 0; i < attempts; i++) {
-    try { return await fn(); }
-    catch (e) {
+    try {
+      return await fn();
+    } catch (e) {
       lastErr = e;
       if (i < attempts - 1) await sleep(500 * Math.pow(3, i));
     }
@@ -82,28 +90,43 @@ function RyvalDraftCard({ post }: { post: GeneratedPost }) {
   const onDownload = async () => {
     setBusy(true);
     try {
-      const slug = (post.hook ?? "post")
-        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "post";
+      const slug =
+        (post.hook ?? "post")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")
+          .slice(0, 40) || "post";
       await exportPostForTikTok({
-        post, caption: post.caption ?? "", hashtags: post.hashtags ?? "", filenameBase: slug,
+        post,
+        caption: post.caption ?? "",
+        hashtags: post.hashtags ?? "",
+        filenameBase: slug,
       });
       toast.success("TikTok pack downloaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export failed");
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
   return (
     <div ref={ref} className="rounded-xl border border-border bg-gradient-card p-5">
       <div className="flex justify-between items-baseline mb-4 gap-3">
         <h3 className="font-bold text-lg text-balance flex-1">{post.hook}</h3>
         <Button size="sm" variant="outline" onClick={onDownload} disabled={busy}>
-          {busy ? <Loader2 className="size-3 mr-1.5 animate-spin" /> : <Download className="size-3 mr-1.5" />}
+          {busy ? (
+            <Loader2 className="size-3 mr-1.5 animate-spin" />
+          ) : (
+            <Download className="size-3 mr-1.5" />
+          )}
           Download
         </Button>
       </div>
       <CarouselPreview post={post} />
       <div className="mt-4 text-sm text-muted-foreground space-y-1">
-        <p><span className="text-foreground font-medium">Caption:</span> {post.caption}</p>
+        <p>
+          <span className="text-foreground font-medium">Caption:</span> {post.caption}
+        </p>
         <p className="text-primary">{post.hashtags}</p>
       </div>
     </div>
@@ -114,14 +137,29 @@ function RyvalDraftCard({ post }: { post: GeneratedPost }) {
 
 async function fetchBrandAssets() {
   const [{ data: logos }, { data: screens }] = await Promise.all([
-    supabase.from("assets").select("file_url").overlaps("tags", ["logo", "ryval logo"]).order("created_at", { ascending: false }).limit(1),
-    supabase.from("assets").select("file_url").overlaps("tags", [
-      "main page","quick scout","ryval discovery",
-      "player profile","player feed","player messages","player opportunities","player reels",
-    ]).limit(20),
+    supabase
+      .from("assets")
+      .select("file_url")
+      .overlaps("tags", ["logo", "ryval logo"])
+      .order("created_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("assets")
+      .select("file_url")
+      .overlaps("tags", [
+        "main page",
+        "quick scout",
+        "ryval discovery",
+        "player profile",
+        "player feed",
+        "player messages",
+        "player opportunities",
+        "player reels",
+      ])
+      .limit(20),
   ]);
   const logoUrl = logos?.[0]?.file_url ?? null;
-  const arr = (screens ?? []).map(s => s.file_url);
+  const arr = (screens ?? []).map((s) => s.file_url);
   const screenUrl = arr.length ? arr[Math.floor(Math.random() * arr.length)] : null;
   return { logoUrl, screenUrl };
 }
@@ -158,7 +196,10 @@ function Generate() {
   const [collegePost, setCollegePost] = useState<CollegePost | null>(null);
   const [collegeBgs, setCollegeBgs] = useState<(string | null)[]>([]);
   const [collegeStatuses, setCollegeStatuses] = useState<CollegeSlideStatus[]>([]);
-  const [collegeAssets, setCollegeAssets] = useState<{ logoUrl: string | null; screenUrl: string | null }>({ logoUrl: null, screenUrl: null });
+  const [collegeAssets, setCollegeAssets] = useState<{
+    logoUrl: string | null;
+    screenUrl: string | null;
+  }>({ logoUrl: null, screenUrl: null });
   const [collegeEngine, setCollegeEngine] = useState<CollegeEngine>("nano");
   const [collegeComposed, setCollegeComposed] = useState(false); // true when last render used openai composed mode
 
@@ -166,7 +207,9 @@ function Generate() {
   const ryvalMut = useMutation({
     mutationFn: async () => {
       setRyvalPost(null);
-      const r = await generate({ data: { ...form, count: 1, variantIndex: Math.floor(Math.random() * 1000) } });
+      const r = await generate({
+        data: { ...form, count: 1, variantIndex: Math.floor(Math.random() * 1000) },
+      });
       const post: GeneratedPost = { ...r.posts[0], cta_type: form.ctaType, bg_images: [] };
       setRyvalPost(post);
       toast.success("Draft ready — rendering backgrounds…");
@@ -177,8 +220,11 @@ function Generate() {
         const prompt = prompts[i];
         if (!prompt) continue;
         try {
-          const { url } = await withRetry(() => genBg({ data: { prompt, model: imageEngine, stylePreset: "ryval" } }), 3);
-          setRyvalPost(prev => {
+          const { url } = await withRetry(
+            () => genBg({ data: { prompt, model: imageEngine, stylePreset: "ryval" } }),
+            3,
+          );
+          setRyvalPost((prev) => {
             if (!prev) return prev;
             const bgs = [...(prev.bg_images ?? [])];
             bgs[i] = url;
@@ -221,25 +267,32 @@ function Generate() {
 
       let fails = 0;
       for (let i = 0; i < built.slides.length; i++) {
-        setCollegeStatuses(prev => prev.map((s, idx) => idx === i ? "loading" : s));
+        setCollegeStatuses((prev) => prev.map((s, idx) => (idx === i ? "loading" : s)));
         try {
           const prompt = useComposed
             ? buildComposedPrompt(built.slides[i], built.meta)
             : built.slides[i].imagePrompt;
           const { url } = await withRetry(
-            () => genBg({ data: {
-              prompt,
-              model: collegeEngine,
-              stylePreset: useComposed ? "college-composed" : "college",
-            } }),
+            () =>
+              genBg({
+                data: {
+                  prompt,
+                  model: collegeEngine,
+                  stylePreset: useComposed ? "college-composed" : "college",
+                },
+              }),
             3,
           );
-          setCollegeBgs(prev => { const n = [...prev]; n[i] = url; return n; });
-          setCollegeStatuses(prev => prev.map((s, idx) => idx === i ? "done" : s));
+          setCollegeBgs((prev) => {
+            const n = [...prev];
+            n[i] = url;
+            return n;
+          });
+          setCollegeStatuses((prev) => prev.map((s, idx) => (idx === i ? "done" : s)));
         } catch (e) {
           fails++;
           console.error("college bg failed", i, e);
-          setCollegeStatuses(prev => prev.map((s, idx) => idx === i ? "failed" : s));
+          setCollegeStatuses((prev) => prev.map((s, idx) => (idx === i ? "failed" : s)));
         }
       }
       if (fails > 0) toast.error(`${fails} slide(s) failed — tap Retry on each.`);
@@ -250,31 +303,40 @@ function Generate() {
 
   const retryCollegeSlide = async (idx: number) => {
     if (!collegePost) return;
-    setCollegeStatuses(prev => prev.map((s, i) => i === idx ? "loading" : s));
+    setCollegeStatuses((prev) => prev.map((s, i) => (i === idx ? "loading" : s)));
     try {
       const useComposed = collegeComposed;
       const prompt = useComposed
         ? buildComposedPrompt(collegePost.slides[idx], collegePost.meta)
         : collegePost.slides[idx].imagePrompt;
       const { url } = await withRetry(
-        () => genBg({ data: {
-          prompt,
-          model: useComposed ? "openai" : "nano-pro",
-          stylePreset: useComposed ? "college-composed" : "college",
-        } }),
+        () =>
+          genBg({
+            data: {
+              prompt,
+              model: useComposed ? "openai" : "nano-pro",
+              stylePreset: useComposed ? "college-composed" : "college",
+            },
+          }),
         3,
       );
-      setCollegeBgs(prev => { const n = [...prev]; n[idx] = url; return n; });
-      setCollegeStatuses(prev => prev.map((s, i) => i === idx ? "done" : s));
+      setCollegeBgs((prev) => {
+        const n = [...prev];
+        n[idx] = url;
+        return n;
+      });
+      setCollegeStatuses((prev) => prev.map((s, i) => (i === idx ? "done" : s)));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Retry failed");
-      setCollegeStatuses(prev => prev.map((s, i) => i === idx ? "failed" : s));
+      setCollegeStatuses((prev) => prev.map((s, i) => (i === idx ? "failed" : s)));
     }
   };
 
   const downloadCollege = async () => {
     if (!collegePost) return;
-    const slug = `${collegePost.meta.school}-${collegePost.meta.sport}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const slug = `${collegePost.meta.school}-${collegePost.meta.sport}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
     try {
       if (collegeComposed) {
         // OpenAI composed slides — images already contain everything. Just zip them.
@@ -282,7 +344,7 @@ function Generate() {
         for (let i = 0; i < collegeBgs.length; i++) {
           const url = collegeBgs[i];
           if (!url) continue;
-          const blob = await fetch(url).then(r => r.blob());
+          const blob = await fetch(url).then((r) => r.blob());
           zip.file(`${slug}-slide-${String(i + 1).padStart(2, "0")}.png`, blob);
         }
         zip.file("caption.txt", `${collegePost.caption}\n\n${collegePost.hashtags}\n`);
@@ -315,14 +377,22 @@ function Generate() {
       <Label>{label}</Label>
       <Select
         value={String(form[key])}
-        onValueChange={(v) => setForm(f => ({ ...f, [key]: typeof f[key] === "number" ? Number(v) : v }))}
+        onValueChange={(v) =>
+          setForm((f) => ({ ...f, [key]: typeof f[key] === "number" ? Number(v) : v }))
+        }
       >
-        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
         <SelectContent>
-          {opts.map(o => {
+          {opts.map((o) => {
             const val = typeof o === "string" ? o : o.value;
             const lbl = typeof o === "string" ? o : o.label;
-            return <SelectItem key={val} value={val}>{lbl}</SelectItem>;
+            return (
+              <SelectItem key={val} value={val}>
+                {lbl}
+              </SelectItem>
+            );
           })}
         </SelectContent>
       </Select>
@@ -359,12 +429,16 @@ function Generate() {
             {sel("Tone", "tone", TONES)}
             {sel("CTA type", "ctaType", CTA_TYPES)}
             {sel("Slides per post", "slidesPerPost", [
-              { value: "5", label: "5" }, { value: "6", label: "6" }, { value: "7", label: "7" },
+              { value: "5", label: "5" },
+              { value: "6", label: "6" },
+              { value: "7", label: "7" },
             ])}
             <div className="space-y-2">
               <Label>Image engine</Label>
               <Select value={imageEngine} onValueChange={(v) => setImageEngine(v as ImageEngine)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="nano">Nano Banana — fast & cheap</SelectItem>
                   <SelectItem value="nano-pro">Nano Banana Pro — premium</SelectItem>
@@ -376,9 +450,11 @@ function Generate() {
               <div className="h-10 flex items-center gap-3 px-3 rounded-md border border-input bg-input">
                 <Switch
                   checked={form.includeAppScreen}
-                  onCheckedChange={(v) => setForm(f => ({ ...f, includeAppScreen: v }))}
+                  onCheckedChange={(v) => setForm((f) => ({ ...f, includeAppScreen: v }))}
                 />
-                <span className="text-sm text-muted-foreground">{form.includeAppScreen ? "Yes" : "No"}</span>
+                <span className="text-sm text-muted-foreground">
+                  {form.includeAppScreen ? "Yes" : "No"}
+                </span>
               </div>
             </div>
           </div>
@@ -387,9 +463,15 @@ function Generate() {
             disabled={ryvalMut.isPending}
             className="bg-gradient-primary text-primary-foreground font-semibold"
           >
-            {ryvalMut.isPending
-              ? <><Loader2 className="size-4 mr-2 animate-spin" /> Generating…</>
-              : <><Sparkles className="size-4 mr-2" /> Generate 1 Post</>}
+            {ryvalMut.isPending ? (
+              <>
+                <Loader2 className="size-4 mr-2 animate-spin" /> Generating…
+              </>
+            ) : (
+              <>
+                <Sparkles className="size-4 mr-2" /> Generate 1 Post
+              </>
+            )}
           </Button>
           {ryvalPost && (
             <div className="mt-8">
@@ -404,24 +486,49 @@ function Generate() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="space-y-2">
               <Label>School</Label>
-              <Input value={collegeForm.school} onChange={e => setCollegeForm(f => ({ ...f, school: e.target.value }))} placeholder="Duke" />
+              <Input
+                value={collegeForm.school}
+                onChange={(e) => setCollegeForm((f) => ({ ...f, school: e.target.value }))}
+                placeholder="Duke"
+              />
             </div>
             <div className="space-y-2">
               <Label>Sport / team</Label>
-              <Input value={collegeForm.sport} onChange={e => setCollegeForm(f => ({ ...f, sport: e.target.value }))} placeholder="Men's Soccer" />
+              <Input
+                value={collegeForm.sport}
+                onChange={(e) => setCollegeForm((f) => ({ ...f, sport: e.target.value }))}
+                placeholder="Men's Soccer"
+              />
             </div>
             <div className="space-y-2">
-              <Label>Conference <span className="text-muted-foreground text-xs">(optional)</span></Label>
-              <Input value={collegeForm.conference} onChange={e => setCollegeForm(f => ({ ...f, conference: e.target.value }))} placeholder="ACC" />
+              <Label>
+                Conference <span className="text-muted-foreground text-xs">(optional)</span>
+              </Label>
+              <Input
+                value={collegeForm.conference}
+                onChange={(e) => setCollegeForm((f) => ({ ...f, conference: e.target.value }))}
+                placeholder="ACC"
+              />
             </div>
             <div className="space-y-2">
-              <Label>Accent color hex <span className="text-muted-foreground text-xs">(optional)</span></Label>
-              <Input value={collegeForm.accent} onChange={e => setCollegeForm(f => ({ ...f, accent: e.target.value }))} placeholder="#1f3fb8" />
+              <Label>
+                Accent color hex <span className="text-muted-foreground text-xs">(optional)</span>
+              </Label>
+              <Input
+                value={collegeForm.accent}
+                onChange={(e) => setCollegeForm((f) => ({ ...f, accent: e.target.value }))}
+                placeholder="#1f3fb8"
+              />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Image engine</Label>
-              <Select value={collegeEngine} onValueChange={(v) => setCollegeEngine(v as CollegeEngine)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={collegeEngine}
+                onValueChange={(v) => setCollegeEngine(v as CollegeEngine)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="nano">Nano Banana — fastest reliable render</SelectItem>
                   <SelectItem value="nano-pro">Nano Banana Pro — higher quality, slower</SelectItem>
@@ -435,12 +542,22 @@ function Generate() {
               disabled={collegeMut.isPending}
               className="bg-gradient-primary text-primary-foreground font-semibold"
             >
-              {collegeMut.isPending
-                ? <><Loader2 className="size-4 mr-2 animate-spin" /> Rendering…</>
-                : <><Sparkles className="size-4 mr-2" /> Generate Post</>}
+              {collegeMut.isPending ? (
+                <>
+                  <Loader2 className="size-4 mr-2 animate-spin" /> Rendering…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="size-4 mr-2" /> Generate Post
+                </>
+              )}
             </Button>
             {collegePost && (
-              <Button variant="outline" onClick={downloadCollege} disabled={collegeStatuses.some(s => s !== "done")}>
+              <Button
+                variant="outline"
+                onClick={downloadCollege}
+                disabled={collegeStatuses.some((s) => s !== "done")}
+              >
                 <Download className="size-4 mr-2" /> Download TikTok pack
               </Button>
             )}
@@ -449,12 +566,16 @@ function Generate() {
             </p>
           </div>
 
-
           {collegePost && (
             <div className="mt-8 space-y-4">
               <div className="flex items-baseline justify-between">
-                <h3 className="font-bold text-lg">{collegePost.meta.school} {collegePost.meta.sport}</h3>
-                <span className="text-xs text-muted-foreground">{collegeStatuses.filter(s => s === "done").length}/{collegePost.slides.length} rendered</span>
+                <h3 className="font-bold text-lg">
+                  {collegePost.meta.school} {collegePost.meta.sport}
+                </h3>
+                <span className="text-xs text-muted-foreground">
+                  {collegeStatuses.filter((s) => s === "done").length}/{collegePost.slides.length}{" "}
+                  rendered
+                </span>
               </div>
               {collegeComposed ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -462,14 +583,34 @@ function Generate() {
                     const url = collegeBgs[i];
                     const status = collegeStatuses[i];
                     return (
-                      <div key={i} className="aspect-[4/5] rounded-lg overflow-hidden border border-border relative bg-[#05080f]">
-                        {url && <img src={url} alt={`slide ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />}
+                      <div
+                        key={i}
+                        className="aspect-[4/5] rounded-lg overflow-hidden border border-border relative bg-[#05080f]"
+                      >
+                        {url && (
+                          <img
+                            src={url}
+                            alt={`slide ${i + 1}`}
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        )}
                         {status !== "done" && (
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                            {status === "loading" && <Loader2 className="size-5 animate-spin text-white/70" />}
-                            {status === "pending" && <span className="text-[10px] text-white/60 uppercase tracking-wider">Queued</span>}
+                            {status === "loading" && (
+                              <Loader2 className="size-5 animate-spin text-white/70" />
+                            )}
+                            {status === "pending" && (
+                              <span className="text-[10px] text-white/60 uppercase tracking-wider">
+                                Queued
+                              </span>
+                            )}
                             {status === "failed" && (
-                              <button onClick={() => retryCollegeSlide(i)} className="text-[10px] text-red-300 underline">Retry</button>
+                              <button
+                                onClick={() => retryCollegeSlide(i)}
+                                className="text-[10px] text-red-300 underline"
+                              >
+                                Retry
+                              </button>
                             )}
                           </div>
                         )}
@@ -488,7 +629,10 @@ function Generate() {
                 />
               )}
               <div className="text-sm text-muted-foreground space-y-1">
-                <p className="whitespace-pre-line"><span className="text-foreground font-medium">Caption:</span> {collegePost.caption}</p>
+                <p className="whitespace-pre-line">
+                  <span className="text-foreground font-medium">Caption:</span>{" "}
+                  {collegePost.caption}
+                </p>
                 <p className="text-primary">{collegePost.hashtags}</p>
               </div>
             </div>

@@ -18,14 +18,38 @@ const Input = z.object({
 
 // Rotate persona + angle each call so a batch of count:1 generations doesn't repeat.
 const PERSONAS = [
-  { who: "high school player (boys)", pain: "no exposure, can't get coaches to watch film, lost in the recruiting noise" },
-  { who: "high school player (girls)", pain: "fewer scouts, smaller showcase circuit, harder to get evaluated fairly" },
-  { who: "JUCO / transfer player", pain: "tight timeline, limited contacts, fighting the 'late bloomer' label" },
-  { who: "international player trying to reach US college soccer", pain: "no US film, no contacts, visa + NCAA eligibility maze" },
-  { who: "college coach (D1/D2/NAIA)", pain: "drowning in unsolicited emails, can't separate real prospects from spam, recruiting budget is tiny" },
-  { who: "club coach / DOC", pain: "players ask for help but no time to chase every college, hard to track outcomes" },
-  { who: "soccer parent", pain: "spending thousands on showcases with zero clarity on what works, scared of scams" },
-  { who: "former player turned trainer", pain: "great players being missed because no one is packaging their story" },
+  {
+    who: "high school player (boys)",
+    pain: "no exposure, can't get coaches to watch film, lost in the recruiting noise",
+  },
+  {
+    who: "high school player (girls)",
+    pain: "fewer scouts, smaller showcase circuit, harder to get evaluated fairly",
+  },
+  {
+    who: "JUCO / transfer player",
+    pain: "tight timeline, limited contacts, fighting the 'late bloomer' label",
+  },
+  {
+    who: "international player trying to reach US college soccer",
+    pain: "no US film, no contacts, visa + NCAA eligibility maze",
+  },
+  {
+    who: "college coach (D1/D2/NAIA)",
+    pain: "drowning in unsolicited emails, can't separate real prospects from spam, recruiting budget is tiny",
+  },
+  {
+    who: "club coach / DOC",
+    pain: "players ask for help but no time to chase every college, hard to track outcomes",
+  },
+  {
+    who: "soccer parent",
+    pain: "spending thousands on showcases with zero clarity on what works, scared of scams",
+  },
+  {
+    who: "former player turned trainer",
+    pain: "great players being missed because no one is packaging their story",
+  },
 ];
 const ANGLES = [
   "expose a specific lie the recruiting industry sells",
@@ -70,7 +94,6 @@ IMAGE PROMPTS (CRITICAL — read carefully):
 - NO text in image, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic abstract gradients, NO stock-business imagery.
 - The image must clearly connect to what the slide's text is saying.`;
 
-
 export const generatePosts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => Input.parse(input))
@@ -83,7 +106,10 @@ export const generatePosts = createServerFn({ method: "POST" })
       type: "object",
       properties: {
         text: { type: "string", description: desc },
-        imagePrompt: { type: "string", description: "Cinematic bg-image prompt that VISUALLY matches this slide's text" },
+        imagePrompt: {
+          type: "string",
+          description: "Cinematic bg-image prompt that VISUALLY matches this slide's text",
+        },
       },
       required: ["text", "imagePrompt"],
       additionalProperties: false,
@@ -107,12 +133,24 @@ export const generatePosts = createServerFn({ method: "POST" })
                   slide_3: slideObj("Twist the knife / show the cost"),
                   slide_4: slideObj("Pivot toward the solution"),
                   slide_5: slideObj("Solution: what to do instead"),
-                  slide_6: slideObj("Optional extra solution slide — leave text empty if not needed"),
+                  slide_6: slideObj(
+                    "Optional extra solution slide — leave text empty if not needed",
+                  ),
                   cta: { type: "string", description: "Final CTA slide text tied to the CTA type" },
                   caption: { type: "string" },
                   hashtags: { type: "string", description: "Space-separated #tags" },
                 },
-                required: ["hook", "slide_2", "slide_3", "slide_4", "slide_5", "slide_6", "cta", "caption", "hashtags"],
+                required: [
+                  "hook",
+                  "slide_2",
+                  "slide_3",
+                  "slide_4",
+                  "slide_5",
+                  "slide_6",
+                  "cta",
+                  "caption",
+                  "hashtags",
+                ],
                 additionalProperties: false,
               },
             },
@@ -163,7 +201,8 @@ Return strictly via the create_posts tool.`;
     });
 
     if (textRes.status === 429) throw new Error("Rate limit reached. Wait a moment and try again.");
-    if (textRes.status === 402) throw new Error("AI credits exhausted. Add credits in Settings → Workspace → Usage.");
+    if (textRes.status === 402)
+      throw new Error("AI credits exhausted. Add credits in Settings → Workspace → Usage.");
     if (!textRes.ok) {
       console.error("AI gateway text error", textRes.status, await textRes.text());
       throw new Error(`AI gateway error (${textRes.status})`);
@@ -175,29 +214,55 @@ Return strictly via the create_posts tool.`;
     const args = JSON.parse(call.function.arguments);
     type SlideObj = { text: string; imagePrompt: string };
     type RawPost = {
-      hook: SlideObj; slide_2: SlideObj; slide_3: SlideObj;
-      slide_4: SlideObj; slide_5: SlideObj; slide_6: SlideObj;
-      cta: string; caption: string; hashtags: string;
+      hook: SlideObj;
+      slide_2: SlideObj;
+      slide_3: SlideObj;
+      slide_4: SlideObj;
+      slide_5: SlideObj;
+      slide_6: SlideObj;
+      cta: string;
+      caption: string;
+      hashtags: string;
     };
     const posts = args.posts as RawPost[];
 
     // Brand assets
     const [{ data: logoAssets }, { data: screenAssets }] = await Promise.all([
-      supabase.from("assets").select("file_url").overlaps("tags", ["logo", "ryval logo"]).order("created_at", { ascending: false }).limit(1),
-      supabase.from("assets").select("file_url").overlaps("tags", [
-        "main page","quick scout","ryval discovery",
-        "player profile","player feed","player messages","player opportunities","player reels",
-        "coach profile","coach feed","coach dashboard","roster needs","applicant screen",
-      ]).limit(40),
+      supabase
+        .from("assets")
+        .select("file_url")
+        .overlaps("tags", ["logo", "ryval logo"])
+        .order("created_at", { ascending: false })
+        .limit(1),
+      supabase
+        .from("assets")
+        .select("file_url")
+        .overlaps("tags", [
+          "main page",
+          "quick scout",
+          "ryval discovery",
+          "player profile",
+          "player feed",
+          "player messages",
+          "player opportunities",
+          "player reels",
+          "coach profile",
+          "coach feed",
+          "coach dashboard",
+          "roster needs",
+          "applicant screen",
+        ])
+        .limit(40),
     ]);
 
     const logoUrl = logoAssets?.[0]?.file_url ?? null;
-    const screens = (screenAssets ?? []).map(s => s.file_url);
+    const screens = (screenAssets ?? []).map((s) => s.file_url);
 
     // Flatten to client-friendly shape; backgrounds generated per-slide on the client.
     const enriched = posts.map((p) => {
-      const slidePrompts = [p.hook, p.slide_2, p.slide_3, p.slide_4, p.slide_5, p.slide_6]
-        .map(s => s?.imagePrompt ?? "");
+      const slidePrompts = [p.hook, p.slide_2, p.slide_3, p.slide_4, p.slide_5, p.slide_6].map(
+        (s) => s?.imagePrompt ?? "",
+      );
       return {
         hook: p.hook?.text ?? "",
         slide_2: p.slide_2?.text ?? "",
@@ -212,9 +277,10 @@ Return strictly via the create_posts tool.`;
         bg_images: [] as string[],
         bg_image_url: null as string | null,
         logo_url: logoUrl,
-        app_screen_url: data.includeAppScreen && screens.length
-          ? screens[Math.floor(Math.random() * screens.length)]
-          : null,
+        app_screen_url:
+          data.includeAppScreen && screens.length
+            ? screens[Math.floor(Math.random() * screens.length)]
+            : null,
       };
     });
 
@@ -225,11 +291,13 @@ Return strictly via the create_posts tool.`;
 export const generateBackground = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      prompt: z.string().min(3).max(4000),
-      model: z.enum(["nano", "nano-pro", "openai"]).optional(),
-      stylePreset: z.enum(["ryval", "college", "college-composed", "raw"]).optional(),
-    }).parse(input),
+    z
+      .object({
+        prompt: z.string().min(3).max(4000),
+        model: z.enum(["nano", "nano-pro", "openai"]).optional(),
+        stylePreset: z.enum(["ryval", "college", "college-composed", "raw"]).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -237,11 +305,11 @@ export const generateBackground = createServerFn({ method: "POST" })
     const styleSuffix =
       data.stylePreset === "college-composed"
         ? "" // prompt already fully describes the composed slide
-      : data.stylePreset === "college"
-        ? `\n\nFormat: vertical 4:5 (1080x1350). Photoreal, cinematic, magazine-quality. Premium college athletics aesthetic — deep dramatic lighting, rich blacks, single accent of school blue. Strong subject, professional photographic depth of field. NO text, NO logos, NO school crests, NO trademarks, NO close-up identifiable faces.`
-      : data.stylePreset === "raw"
-        ? ""
-        : `\n\nFormat: vertical 4:5 aspect ratio composition optimized for a 1080x1350 social post — subject placed safely in the central 80% so nothing critical gets cropped. Style: premium soccer / student-athlete world — real settings like college campuses, soccer fields, locker rooms, athletic gyms, training grounds, stadiums, dorm rooms, bleachers. Either cinematic photographic OR clean flat-vector cartoon illustration OR bold editorial illustration — pick whatever best fits the scene. Dark moody palette: deep navy, charcoal, with a single electric blue accent. Strong subject, clear focal point, rich depth, professional lighting. NO text, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic gradients, NO corporate stock imagery (no suits, no boardrooms, no handshakes).`;
+        : data.stylePreset === "college"
+          ? `\n\nFormat: vertical 4:5 (1080x1350). Photoreal, cinematic, magazine-quality. Premium college athletics aesthetic — deep dramatic lighting, rich blacks, single accent of school blue. Strong subject, professional photographic depth of field. NO text, NO logos, NO school crests, NO trademarks, NO close-up identifiable faces.`
+          : data.stylePreset === "raw"
+            ? ""
+            : `\n\nFormat: vertical 4:5 aspect ratio composition optimized for a 1080x1350 social post — subject placed safely in the central 80% so nothing critical gets cropped. Style: premium soccer / student-athlete world — real settings like college campuses, soccer fields, locker rooms, athletic gyms, training grounds, stadiums, dorm rooms, bleachers. Either cinematic photographic OR clean flat-vector cartoon illustration OR bold editorial illustration — pick whatever best fits the scene. Dark moody palette: deep navy, charcoal, with a single electric blue accent. Strong subject, clear focal point, rich depth, professional lighting. NO text, NO logos, NO school crests, NO NCAA marks, NO close-up faces, NO generic gradients, NO corporate stock imagery (no suits, no boardrooms, no handshakes).`;
 
     const fullPrompt = `${data.prompt}${styleSuffix}`;
 
@@ -271,9 +339,11 @@ export const generateBackground = createServerFn({ method: "POST" })
       const j = await r.json();
       const b64: string | undefined = j.data?.[0]?.b64_json;
       if (!b64) throw new Error("No image returned from OpenAI");
-      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
       const path = `${userId}/generated/${crypto.randomUUID()}.png`;
-      const { error: upErr } = await supabase.storage.from("assets").upload(path, bytes, { contentType: "image/png" });
+      const { error: upErr } = await supabase.storage
+        .from("assets")
+        .upload(path, bytes, { contentType: "image/png" });
       if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
       return { url: supabase.storage.from("assets").getPublicUrl(path).data.publicUrl };
     }
@@ -282,9 +352,10 @@ export const generateBackground = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
 
-    const model = data.model === "nano-pro"
-      ? "google/gemini-3.1-flash-image-preview"
-      : "google/gemini-2.5-flash-image";
+    const model =
+      data.model === "nano-pro"
+        ? "google/gemini-3.1-flash-image-preview"
+        : "google/gemini-2.5-flash-image";
 
     const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -307,10 +378,11 @@ export const generateBackground = createServerFn({ method: "POST" })
     const [meta, b64] = dataUrl.split(",");
     const mime = meta.slice(5, meta.indexOf(";"));
     const ext = mime.split("/")[1] ?? "png";
-    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
     const path = `${userId}/generated/${crypto.randomUUID()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("assets").upload(path, bytes, { contentType: mime });
+    const { error: upErr } = await supabase.storage
+      .from("assets")
+      .upload(path, bytes, { contentType: mime });
     if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
     return { url: supabase.storage.from("assets").getPublicUrl(path).data.publicUrl };
   });
-
