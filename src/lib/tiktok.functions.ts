@@ -777,7 +777,7 @@ async function tiktokAccountIdsForUser(userId: string) {
   return (data ?? []).map((row) => row.id as string);
 }
 
-async function publishPhotoCarouselToAllAccounts(opts: {
+export async function publishPhotoCarouselToAllAccounts(opts: {
   userId: string;
   postId: string;
   photoUrls: string[];

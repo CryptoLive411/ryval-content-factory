@@ -1328,14 +1328,19 @@ async function buildNcaaNext(side: Side, division: Division, idBase: string, now
   if (!first) return null;
   const until = daysFromToday(first, now);
   if (until < 0 || until > 6) return null;
-  const rows = round.games
+  const allRows = round.games
     .map((g) => gameRowFromBracket(g, registry))
-    .filter((r): r is GameRow => Boolean(r))
-    .slice(0, 16);
-  if (rows.length !== round.games.length) return null;
+    .filter((r): r is GameRow => Boolean(r));
+  if (allRows.length !== round.games.length) return null;
+  // Two slides hold 16 games. A bigger round (the 64-team first round) shows its seeded matchups.
+  const seedOf = (r: GameRow) => Math.min(Number(r.a.seed) || 99, Number(r.b.seed) || 99);
+  const rows =
+    allRows.length > 16 ? [...allRows].sort((x, y) => seedOf(x) - seedOf(y)).slice(0, 16) : allRows;
+  const partial = allRows.length > rows.length;
+  const games = allRows.length;
   const D = DIV(division);
   const opening = index === 0;
-  const teams = rows.length * 2;
+  const teams = games * 2;
   const field = bracket.field_size ?? null;
   const byes = opening && field && field > teams ? field - teams : 0;
   const label = round.label.toLowerCase();
@@ -1348,8 +1353,10 @@ async function buildNcaaNext(side: Side, division: Division, idBase: string, now
       unit: opening && field ? "TEAMS" : "TEAMS LEFT",
       unitSub: opening ? "ONE TITLE" : teamsLeftLabel(teams),
       headline: opening ? `IT STARTS ${upper(weekday(first))}` : `${upper(round.label)} IS SET`,
-      sub: `${rows.length} ${label} games${dates.length && dates[0] !== dates[dates.length - 1] ? ` from ${dayTag(first)}` : ` on ${weekday(first)}`}.${byes ? ` The top ${byes} seeds wait in the second round.` : ""}`,
-      teaser: "Every matchup inside. Follow every game live on Ryval.",
+      sub: `${games} ${label} games${dates.length && dates[0] !== dates[dates.length - 1] ? ` from ${weekday(first)}, ${shortDay(first)}` : ` on ${weekday(first)}`}.${byes ? ` The top ${byes} seeds wait in the second round.` : ""}`,
+      teaser: partial
+        ? `The ${rows.length} seeded matchups inside. All ${games} are live on Ryval.`
+        : "Every matchup inside. Follow every game live on Ryval.",
       logo: null,
     },
   ];
@@ -1360,20 +1367,22 @@ async function buildNcaaNext(side: Side, division: Division, idBase: string, now
       kicker:
         rows.length > 8 ? `${kicker} · ${i / 8 + 1} OF ${Math.ceil(rows.length / 8)}` : kicker,
       games: rows.slice(i, i + 8),
-      note: rows.some((r) => r.a.seed || r.b.seed)
-        ? "Seeds as NCAA.com publishes them."
-        : undefined,
+      note: partial
+        ? `The ${rows.length} seeded matchups of ${games}. Seeds as NCAA.com publishes them.`
+        : rows.some((r) => r.a.seed || r.b.seed)
+          ? "Seeds as NCAA.com publishes them."
+          : undefined,
     });
   }
   const hook = opening
-    ? `The ${D} ${sideWord(side)} NCAA tournament starts ${weekday(first)} with ${rows.length} first-round games`
-    : `The ${D} ${sideWord(side)} NCAA ${label} is set: ${rows.length} games starting ${weekday(first)}`;
+    ? `The ${D} ${sideWord(side)} NCAA tournament starts ${weekday(first)} with ${games} first-round games`
+    : `The ${D} ${sideWord(side)} NCAA ${label} is set: ${games} games starting ${weekday(first)}`;
   return storyFrom({
     id: `${idBase}-next-${slug(round.label)}`,
     side,
     division,
     hook,
-    hookBody: `Every ${label} matchup in the ${D} ${sideWord(side)} NCAA tournament.`,
+    hookBody: `${partial ? "The seeded" : "Every"} ${label} matchups in the ${D} ${sideWord(side)} NCAA tournament.`,
     slides: [
       {
         headline: `${D} ${sideWord(side)} NCAA ${label}`,

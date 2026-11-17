@@ -45,7 +45,16 @@ bun scripts/preview-college-stats.ts <outDir> [perSide] [seed] [families]
 # e.g. bun scripts/preview-college-stats.ts tmp/stats 3 0 leaders,freshmen
 ```
 
-Deploying this also needs `scripts/render-stats.mjs`, the five new fonts in `public/fonts/` (Barlow Condensed and JetBrains Mono), `public/app-screens/college-*.jpg` and `public/web-screens/` on the droplet, next to `scripts/render-slides.mjs`.
+To push one stats post to one account right now (outside the hourly clock), from this Mac:
+
+```bash
+bun scripts/force-publish-stats.ts prepare <publer account id> <men|women> <families> [match]   # builds, renders, uploads; prints the post id
+bun scripts/force-publish-stats.ts publish <post id>                                           # sends it through Publer and waits for TikTok
+```
+
+The prepared post is saved as `approved`, so the cron never touches it. Look at `tmp/forced/<post id>/` before publishing.
+
+Deploy with `bash scripts/deploy-droplet.sh` from a machine with SSH access to the droplet. It builds, backs up the server's `dist/` and `scripts/` to `/opt/ryval-content-forge/backups/<time>`, uploads `dist/`, `scripts/` (including `render-stats.mjs`), the new fonts and the app and web screens, and restarts `ryval-forge`.
 
 ## The clock
 
