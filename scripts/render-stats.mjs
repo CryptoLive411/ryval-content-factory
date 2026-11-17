@@ -224,22 +224,26 @@ async function crest(ctx, helpers, url, x, y, size, align = "left") {
 async function drawCover(ctx, helpers, post, spec, slide, photo) {
   const accent = spec.accent;
   paintBase(helpers.canvasPkg, ctx, accent, photo);
-  await header(ctx, helpers, post, accent, "2026 SEASON");
+  await header(ctx, helpers, post, accent, "");
   const maxW = W - PAD * 2;
   ctx.textBaseline = "alphabetic";
 
-  // Bottom-up: teaser, rule, sub, name, big number, kicker.
+  // Bottom-up: (teaser and rule), sub, name, big number, kicker.
   let y = H - PAD - 64;
-  ctx.font = `500 30px ${BODY}`;
-  const teaser = wrap(ctx, slide.teaser, maxW).slice(0, 2);
-  y -= (teaser.length - 1) * 40;
-  const teaserTop = y;
-  ctx.fillStyle = "rgba(255,255,255,0.78)";
-  teaser.forEach((line, i) => ctx.fillText(line, PAD, teaserTop + i * 40));
-  y = teaserTop - 58;
-  ctx.fillStyle = accent;
-  ctx.fillRect(PAD, y, 96, 5);
-  y -= 34;
+  if (slide.teaser) {
+    ctx.font = `500 30px ${BODY}`;
+    const teaser = wrap(ctx, slide.teaser, maxW).slice(0, 2);
+    y -= (teaser.length - 1) * 40;
+    const teaserTop = y;
+    ctx.fillStyle = "rgba(255,255,255,0.78)";
+    teaser.forEach((line, i) => ctx.fillText(line, PAD, teaserTop + i * 40));
+    y = teaserTop - 58;
+    ctx.fillStyle = accent;
+    ctx.fillRect(PAD, y, 96, 5);
+    y -= 34;
+  } else {
+    y -= 30;
+  }
 
   ctx.font = `600 40px ${COND_SEMI}`;
   const sub = wrap(ctx, slide.sub, maxW).slice(0, 2);
@@ -295,7 +299,7 @@ async function drawCover(ctx, helpers, post, spec, slide, photo) {
 async function drawBoard(ctx, helpers, post, spec, slide) {
   const accent = spec.accent;
   paintBase(helpers.canvasPkg, ctx, accent, null);
-  await header(ctx, helpers, post, accent, spec.side === "men" ? "MEN" : "WOMEN");
+  await header(ctx, helpers, post, accent, "");
   const maxW = W - PAD * 2;
   const many = slide.rows.length > 5;
   ctx.textBaseline = "alphabetic";
@@ -381,19 +385,23 @@ async function drawBoard(ctx, helpers, post, spec, slide) {
 async function drawScoreCover(ctx, helpers, post, spec, slide, photo) {
   const accent = spec.accent;
   paintBase(helpers.canvasPkg, ctx, accent, photo);
-  await header(ctx, helpers, post, accent, "FINAL");
+  await header(ctx, helpers, post, accent, "");
   const maxW = W - PAD * 2;
   ctx.textBaseline = "alphabetic";
   let y = H - PAD - 64;
-  ctx.font = `500 30px ${BODY}`;
-  const teaser = wrap(ctx, slide.teaser, maxW).slice(0, 2);
-  y -= (teaser.length - 1) * 40;
-  ctx.fillStyle = "rgba(255,255,255,0.78)";
-  teaser.forEach((line, i) => ctx.fillText(line, PAD, y + i * 40));
-  y -= 58;
-  ctx.fillStyle = accent;
-  ctx.fillRect(PAD, y, 96, 5);
-  y -= 34;
+  if (slide.teaser) {
+    ctx.font = `500 30px ${BODY}`;
+    const teaser = wrap(ctx, slide.teaser, maxW).slice(0, 2);
+    y -= (teaser.length - 1) * 40;
+    ctx.fillStyle = "rgba(255,255,255,0.78)";
+    teaser.forEach((line, i) => ctx.fillText(line, PAD, y + i * 40));
+    y -= 58;
+    ctx.fillStyle = accent;
+    ctx.fillRect(PAD, y, 96, 5);
+    y -= 34;
+  } else {
+    y -= 30;
+  }
   ctx.font = `600 40px ${COND_SEMI}`;
   const line = wrap(ctx, slide.line, maxW).slice(0, 2);
   ctx.fillStyle = "rgba(255,255,255,0.92)";
@@ -446,7 +454,7 @@ async function drawScoreCover(ctx, helpers, post, spec, slide, photo) {
 async function drawScoreboard(ctx, helpers, post, spec, slide) {
   const accent = spec.accent;
   paintBase(helpers.canvasPkg, ctx, accent, null);
-  await header(ctx, helpers, post, accent, spec.side === "men" ? "MEN" : "WOMEN");
+  await header(ctx, helpers, post, accent, "");
   const maxW = W - PAD * 2;
   ctx.textBaseline = "alphabetic";
   const title = fit(ctx, slide.title, DISPLAY, 400, maxW, 120, 80, 1);
@@ -544,7 +552,7 @@ async function drawScoreboard(ctx, helpers, post, spec, slide) {
 async function drawLogoWall(ctx, helpers, post, spec, slide) {
   const accent = spec.accent;
   paintBase(helpers.canvasPkg, ctx, accent, null, { glowX: W * 0.5, glowY: H * 0.55, glowR: 900 });
-  await header(ctx, helpers, post, accent, spec.side === "men" ? "MEN" : "WOMEN");
+  await header(ctx, helpers, post, accent, "");
   const maxW = W - PAD * 2;
   ctx.textBaseline = "alphabetic";
   ctx.font = `400 220px ${DISPLAY}`;
@@ -598,7 +606,7 @@ async function drawLogoWall(ctx, helpers, post, spec, slide) {
 async function drawPlayer(ctx, helpers, post, spec, slide) {
   const accent = spec.accent;
   paintBase(helpers.canvasPkg, ctx, accent, null, { glowY: H * 0.32 });
-  await header(ctx, helpers, post, accent, spec.side === "men" ? "MEN" : "WOMEN");
+  await header(ctx, helpers, post, accent, "");
   const maxW = W - PAD * 2;
   ctx.textBaseline = "alphabetic";
 
@@ -667,16 +675,20 @@ async function drawPlayer(ctx, helpers, post, spec, slide) {
 async function drawPotw(ctx, helpers, post, spec, slide, photo) {
   const accent = spec.accent;
   paintBase(helpers.canvasPkg, ctx, accent, photo);
-  await header(ctx, helpers, post, accent, "RYVAL PICK");
+  await header(ctx, helpers, post, accent, "");
   const maxW = W - PAD * 2;
   ctx.textBaseline = "alphabetic";
   let y = H - PAD - 64;
-  ctx.font = `500 29px ${BODY}`;
-  const teaser = wrap(ctx, slide.teaser, maxW).slice(0, 2);
-  y -= (teaser.length - 1) * 40;
-  ctx.fillStyle = "rgba(255,255,255,0.75)";
-  teaser.forEach((line, i) => ctx.fillText(line, PAD, y + i * 40));
-  y -= 70;
+  if (slide.teaser) {
+    ctx.font = `500 29px ${BODY}`;
+    const teaser = wrap(ctx, slide.teaser, maxW).slice(0, 2);
+    y -= (teaser.length - 1) * 40;
+    ctx.fillStyle = "rgba(255,255,255,0.75)";
+    teaser.forEach((line, i) => ctx.fillText(line, PAD, y + i * 40));
+    y -= 70;
+  } else {
+    y -= 30;
+  }
   ctx.font = `500 27px ${MONO}`;
   for (let i = slide.lines.length - 1; i >= 0; i--) {
     const l = fit(ctx, slide.lines[i], MONO, 500, maxW - 34, 27, 18, 1);
@@ -721,7 +733,7 @@ async function drawPotw(ctx, helpers, post, spec, slide, photo) {
 async function drawXi(ctx, helpers, post, spec, slide) {
   const accent = spec.accent;
   paintBase(helpers.canvasPkg, ctx, accent, null, { glowY: H * 0.55, glowX: W * 0.5, glowR: 820 });
-  await header(ctx, helpers, post, accent, spec.side === "men" ? "MEN" : "WOMEN");
+  await header(ctx, helpers, post, accent, "");
   const maxW = W - PAD * 2;
   ctx.textBaseline = "alphabetic";
   const title = fit(ctx, slide.title, DISPLAY, 400, maxW, 120, 80, 1);
@@ -884,7 +896,7 @@ async function drawCta(ctx, helpers, post, spec) {
 
   // 1. The line written for this post.
   let y = 150;
-  const hook = fit(ctx, cta.hook ?? "", COND, 800, maxW, 50, 34, 2);
+  const hook = fit(ctx, cta.hook ?? "", COND, 800, maxW, 64, 40, 2);
   ctx.font = `800 ${hook.size}px ${COND}`;
   ctx.fillStyle = "#ffffff";
   for (const line of hook.lines) {
@@ -923,16 +935,16 @@ async function drawCta(ctx, helpers, post, spec) {
   // 4. The download bar sits on the floor; devices fill what is left above it.
   const barH = 112;
   const barY = H - PAD - barH - 30;
-  const proofY = barY - 22;
+  const proofY = cta.proof ? barY - 22 : barY + 4;
   const deviceTop = y + 4;
   const floor = proofY - 26;
   const room = floor - deviceTop;
   const laptopImg = cta.laptop ? await helpers.loadImg(cta.laptop) : null;
   const phoneImg = cta.phone ? await helpers.loadImg(cta.phone) : null;
-  const phH = Math.max(260, Math.min(Math.round(room + 20), 520));
+  const phH = Math.max(260, Math.min(Math.round(room + 20), 620));
   const phW = Math.round(phH * (518 / 1014));
   if (laptopImg && room > 220) {
-    const lw = Math.min(760, Math.round((room - 40) / 0.646));
+    const lw = Math.min(800, Math.round((room - 40) / 0.646));
     const lh = Math.round((lw - lw * 0.044) * 0.625 + lw * 0.044) + 20;
     drawLaptop(ctx, laptopImg, PAD + 10, floor - lh, lw);
   }
@@ -960,14 +972,17 @@ async function drawCta(ctx, helpers, post, spec) {
     const bw = bh * (badge.width / Math.max(1, badge.height));
     ctx.drawImage(badge, W - PAD - 18 - bw, barY + (barH - bh) / 2, bw, bh);
   }
-  const btn = fit(ctx, cta.button ?? "DOWNLOAD RYVAL FREE", DISPLAY, 400, maxW - 290, 64, 40, 1);
+  const btn = fit(ctx, cta.button ?? "DOWNLOAD RYVAL FREE", DISPLAY, 400, maxW - 290, 72, 40, 1);
   ctx.font = `400 ${btn.size}px ${DISPLAY}`;
   ctx.fillStyle = "#05070A";
   ctx.textBaseline = "alphabetic";
-  ctx.fillText(btn.lines[0] ?? "", bx, barY + barH / 2 + btn.size * 0.2);
-  ctx.font = `700 17px ${MONO_BOLD}`;
-  ctx.fillStyle = "rgba(5,7,10,0.72)";
-  spaced(ctx, cta.buttonSub ?? "", bx + 2, barY + barH / 2 + btn.size * 0.2 + 30, 1);
+  const btnY = cta.buttonSub ? barY + barH / 2 + btn.size * 0.2 : barY + barH / 2 + btn.size * 0.36;
+  ctx.fillText(btn.lines[0] ?? "", bx, btnY);
+  if (cta.buttonSub) {
+    ctx.font = `700 17px ${MONO_BOLD}`;
+    ctx.fillStyle = "rgba(5,7,10,0.72)";
+    spaced(ctx, cta.buttonSub, bx + 2, btnY + 30, 1);
+  }
   // The kicker under the button: the claim for college players.
   if (cta.kicker) {
     const kk = fit(ctx, cta.kicker, MONO_BOLD, 700, maxW, 18, 12, 1);

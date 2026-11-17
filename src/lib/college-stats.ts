@@ -427,15 +427,15 @@ const hashtagsFor = (side: Side, division: Division) =>
 
 /** The line above the brand close, written for what the post just showed. */
 const CTA_HOOKS: Record<Family, string> = {
-  leaders: "Want your name on this list? It starts with college coaches seeing you.",
-  freshmen: "A year ago they were the ones getting recruited. Your class is next.",
-  performers: "Want to be on this list? It starts with college coaches seeing you.",
-  totw: "Want your name in this XI? It starts with college coaches seeing you.",
-  scores: "Want to play in games like these? It starts with college coaches seeing you.",
-  ncaa: "Want to play in this tournament one day? It starts with college coaches seeing you.",
-  teams: "Want to play for a program like this? It starts with college coaches seeing you.",
-  streaks: "Want to play for a program like this? It starts with college coaches seeing you.",
-  poll: "Want to play for a top-10 program? It starts with college coaches seeing you.",
+  leaders: "Want your name on this list?",
+  freshmen: "Your class is next.",
+  performers: "Want your name here next?",
+  totw: "Want your name in this XI?",
+  scores: "Want to play in games like these?",
+  ncaa: "Want to play in this tournament?",
+  teams: "Want to play for a program like this?",
+  streaks: "Want to play for a program like this?",
+  poll: "Want to play for a top-10 program?",
 };
 
 const LAPTOP: Partial<Record<Family, string>> = {
@@ -448,23 +448,15 @@ const LAPTOP: Partial<Record<Family, string>> = {
   poll: "/web-screens/college-rankings.jpg",
 };
 
-function ctaFor(side: Side, family: Family, everyoneHasProfile: boolean): StatCta {
+function ctaFor(side: Side, family: Family, _everyoneHasProfile: boolean): StatCta {
   return {
     hook: CTA_HOOKS[family],
-    kicker: everyoneHasProfile
-      ? "EVERY PLAYER IN THIS POST HAS A RYVAL PROFILE"
-      : "FREE TO DOWNLOAD. FREE TO JOIN.",
+    kicker: "IN COLLEGE? YOUR PROFILE IS ALREADY ON RYVAL. CLAIM IT.",
     lines: ["GET SEEN.", "GET RECRUITED."],
-    rows: [
-      {
-        tag: "HIGH SCHOOL",
-        text: "Build your profile, post your film, get on college coaches' radar.",
-      },
-      { tag: "COLLEGE", text: "Your stats are already on Ryval. Claim your profile." },
-    ],
-    proof: "1,800+ COLLEGE PROGRAMS · 50,000+ PLAYERS · LIVE NCAA SCORES",
+    rows: [],
+    proof: "",
     button: "DOWNLOAD RYVAL FREE",
-    buttonSub: "ON THE APP STORE · APP.RYVALSPORTS.APP",
+    buttonSub: "",
     phone: "/app-screens/college-hub.jpg",
     laptop:
       LAPTOP[family] ??
@@ -477,10 +469,8 @@ function ctaFor(side: Side, family: Family, everyoneHasProfile: boolean): StatCt
 const CTA_HEADLINE = "Get seen. Get recruited.";
 const CTA_BODY =
   "High school? Build your profile and post your film. College? Your stats are already on Ryval. Download Ryval free.";
-const CAPTION_CLOSE = [
-  "Want college coaches to see you? Download Ryval free on the App Store. Build your profile, post your film, get seen, get recruited.",
-  "Already playing in college? Your stats are already on Ryval. Search your name and claim your profile.",
-].join("\n");
+const CAPTION_CLOSE =
+  "Get seen. Get recruited. Download Ryval free on the App Store. In college? Your profile is already there, claim it.";
 
 /** "West Ala.." -> "West Ala." when a school abbreviation ends a sentence. */
 function tidy<T>(value: T): T {
@@ -490,6 +480,51 @@ function tidy<T>(value: T): T {
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, tidy(v)])) as T;
   }
   return value;
+}
+
+/** First sentence only: the caption states the fact, the close sells the download. */
+function firstSentence(text: string) {
+  const m = text.match(/^.+?[.!?](?=\s|$)/);
+  return (m ? m[0] : text).trim();
+}
+
+/**
+ * Posts people save and share read in two seconds: one idea per slide, big type, little else.
+ * No teasers or footnotes, board rows keep only who and where, the leader card is dropped
+ * (the cover already shows the leader), Player of the Week keeps its one stat line.
+ */
+function simplify(spec: StatSpec): StatSpec {
+  const keepSub = spec.family === "freshmen" ? 3 : 2;
+  const cleanSub = (sub: string) =>
+    sub
+      .split(" · ")
+      .filter(
+        (part) =>
+          part && !/\d+ GP$/i.test(part) && !/^(R-)?(Fr|So|Jr|Sr|Gr|RS \w+)\.?$/i.test(part),
+      )
+      .slice(0, keepSub)
+      .join(" · ");
+  const slides = spec.slides
+    .filter((s) => !(s.type === "player" && /^NO\. 1 /.test(s.kicker)))
+    .map((s): StatSlide => {
+      if (s.type === "cover") return { ...s, teaser: "" };
+      if (s.type === "score") return { ...s, teaser: "" };
+      if (s.type === "potw") return { ...s, teaser: "", lines: s.lines.slice(0, 1) };
+      if (s.type === "player") return { ...s, note: "" };
+      if (s.type === "board")
+        return { ...s, note: undefined, rows: s.rows.map((r) => ({ ...r, sub: cleanSub(r.sub) })) };
+      if (s.type === "scoreboard") {
+        // A tag every card repeats (one date for the whole round) says nothing; the cover already did.
+        const same = s.games.every((g) => g.tag === s.games[0]?.tag);
+        return {
+          ...s,
+          note: undefined,
+          games: same ? s.games.map((g) => ({ ...g, tag: "" })) : s.games,
+        };
+      }
+      return s;
+    });
+  return { ...spec, slides };
 }
 
 function storyFrom(raw: {
@@ -503,6 +538,7 @@ function storyFrom(raw: {
   spec: StatSpec;
 }): CollegeStatsStory {
   const opts = tidy(raw);
+  opts.spec = simplify(opts.spec);
   return {
     id: opts.id,
     kind: "stats",
@@ -514,7 +550,7 @@ function storyFrom(raw: {
     ctaHeadline: CTA_HEADLINE,
     ctaBody: CTA_BODY,
     screen: opts.spec.cta.phone,
-    caption: `${opts.caption}\n\n${CAPTION_CLOSE}`,
+    caption: `${firstSentence(opts.caption)}\n\n${CAPTION_CLOSE}`,
     hashtags: hashtagsFor(opts.side, opts.division),
     family: opts.spec.family === "performers" || opts.spec.family === "totw" ? "news" : "proof",
     objective: "college stats with a claim / download close",
@@ -630,8 +666,8 @@ async function buildLeaders(side: Side, division: Division, metric: Metric, id: 
         ? upper(leadName)
         : leaders.map((l) => upper(l.player!.name.split(" ").slice(-1)[0]!)).join(" · "),
       sub: single
-        ? `${top.team.name}${who ? ` ${who}` : ""}. Nobody in ${D} ${sideWord(side)} soccer has more.`
-        : `${leaders.map((l) => l.team.name).join(", ")}. Tied for the most in ${D} ${sideWord(side)} soccer.`,
+        ? [top.team.name, who].filter(Boolean).join(" · ")
+        : `${leaders.map((l) => l.team.name).join(" · ")}. Tied for the lead.`,
       teaser: `The top 5, from each school's stat page as of ${asOf}.`,
       logo: single ? logoFor(registry, top.team.sport_program_id, top.team.image_url) : null,
     },
@@ -814,7 +850,7 @@ async function buildFreshmen(side: Side, division: Division, id: string) {
       unit: "POINTS",
       unitSub: "AS A FRESHMAN",
       headline: upper(leadName),
-      sub: `${lead.team.name}, ${g} goals and ${a} assists. No true freshman in ${D} ${sideWord(side)} soccer has more points.`,
+      sub: `${lead.team.name} · ${g} goals, ${a} assists`,
       teaser: `A year ago, most of them were still in high school or club soccer. Top 5 as of ${asOf}.`,
       logo: logoFor(registry, lead.team.sport_program_id, lead.team.image_url),
     },
@@ -1353,7 +1389,7 @@ async function buildNcaaNext(side: Side, division: Division, idBase: string, now
       unit: opening && field ? "TEAMS" : "TEAMS LEFT",
       unitSub: opening ? "ONE TITLE" : teamsLeftLabel(teams),
       headline: opening ? `IT STARTS ${upper(weekday(first))}` : `${upper(round.label)} IS SET`,
-      sub: `${games} ${label} games${dates.length && dates[0] !== dates[dates.length - 1] ? ` from ${weekday(first)}, ${shortDay(first)}` : ` on ${weekday(first)}`}.${byes ? ` The top ${byes} seeds wait in the second round.` : ""}`,
+      sub: `${games} games${dates.length && dates[0] !== dates[dates.length - 1] ? ` from ${weekday(first)}, ${shortDay(first)}` : ` on ${weekday(first)}`}.`,
       teaser: partial
         ? `The ${rows.length} seeded matchups inside. All ${games} are live on Ryval.`
         : "Every matchup inside. Follow every game live on Ryval.",
@@ -1437,9 +1473,9 @@ async function buildNcaaAlive(side: Side, division: Division, idBase: string, no
       kicker,
       big: String(n),
       unit: "TEAMS LEFT",
-      unitSub: teamsLeftLabel(n),
+      unitSub: "",
       headline: teamsLeftLabel(n) === `${n} LEFT` ? `${n} TEAMS LEFT` : teamsLeftLabel(n),
-      sub: `The ${D} ${sideWord(side)} NCAA ${roundWords(last.label)} is done. ${next.label}${next.games[0]?.game_date ? ` starts ${weekday(next.games[0].game_date)}` : " is next"}.`,
+      sub: `${next.label}${next.games[0]?.game_date ? ` starts ${weekday(next.games[0].game_date)}` : " is next"}.`,
       teaser: "Every team still alive, then every matchup.",
       logo: null,
     },
@@ -1583,7 +1619,7 @@ async function buildTeamBoard(side: Side, division: Division, metric: TeamMetric
           unit: info.unit,
           unitSub: top.games ? `IN ${top.games} GAMES` : "",
           headline: upper(top.team.name),
-          sub: `${top.team.conference ? `${top.team.conference}. ` : ""}${info.best[0]!.toUpperCase()}${info.best.slice(1)} in ${D} ${sideWord(side)} soccer.`,
+          sub: top.team.conference ?? "",
           teaser: `The top 5, from every NCAA.com final as of ${asOf}.`,
           logo: logoFor(registry, top.team.sport_program_id, top.team.image_url),
         },
@@ -1678,7 +1714,7 @@ async function buildStreak(
           unit: info.unit,
           unitSub: `SINCE ${upper(shortDay(top.first_date))}`,
           headline: upper(top.team.name),
-          sub: `${top.team.conference ? `${top.team.conference}. ` : ""}Nobody in ${D} ${sideWord(side)} soccer has a longer one going.`,
+          sub: top.team.conference ?? "",
           teaser: `The top 5 active runs, as of ${asOf}.`,
           logo: logoFor(registry, top.team.sport_program_id, top.team.image_url),
         },
@@ -1752,7 +1788,7 @@ async function buildPoll(side: Side, idBase: string, now: Date) {
             ? `${top.first_place_votes} FIRST-PLACE VOTES`
             : "UNITED SOCCER COACHES",
           headline: upper(top.team.name),
-          sub: `${top.record ? `${top.record}. ` : ""}${top.team.conference ? `${top.team.conference}.` : ""}`,
+          sub: [top.record, top.team.conference].filter(Boolean).join(" · "),
           teaser: "The top 10 in the country. Swipe.",
           logo: logoFor(registry, top.team.sport_program_id, top.team.image_url),
         },
