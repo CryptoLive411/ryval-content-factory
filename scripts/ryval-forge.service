@@ -1,0 +1,17 @@
+[Unit]
+Description=Ryval Content Forge
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/ryval-content-forge
+Environment=NODE_ENV=production HOST=127.0.0.1 PORT=3000 NODE_OPTIONS=--experimental-websocket
+EnvironmentFile=-/opt/ryval-content-forge/.env
+ExecStart=/usr/bin/node /opt/ryval-content-forge/scripts/node-host.mjs
+Restart=always
+RestartSec=3
+MemoryMax=280M
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

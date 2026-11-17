@@ -57,6 +57,9 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
           persistSession: false,
           autoRefreshToken: false,
         },
+        realtime: {
+          worker: false,
+        },
       }
     );
 

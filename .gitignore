@@ -30,3 +30,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets and local scratch (added 2026-11-17). .env stays tracked with only the public Supabase keys
+# Lovable needs; local copies hold server secrets and are marked skip-worktree so they are never committed.
+.env.local
+.dev.vars
+tmp/
+supabase/.temp/
+# Stock photo library: rebuilt by scripts/build-stock-library.mjs, already on the server
+public/stock/

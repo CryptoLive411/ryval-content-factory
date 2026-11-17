@@ -1,11 +1,13 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureLocalAccount } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const nav = useNavigate();
+  const prepareAccount = useServerFn(ensureLocalAccount);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -27,14 +30,22 @@ function LoginPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email, password: pw, options: { emailRedirectTo: `${window.location.origin}/generate` },
-        });
-        if (error) throw error;
-        toast.success("Account created. Signing you in…");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
-        if (error) throw error;
+        await prepareAccount({ data: { email, password: pw } });
+      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
+      if (error && /not confirmed/i.test(error.message)) {
+        await prepareAccount({ data: { email, password: pw } });
+        const retry = await supabase.auth.signInWithPassword({ email, password: pw });
+        if (retry.error) throw retry.error;
+      } else if (error) {
+        throw error;
+      }
+      toast.success(mode === "signup" ? "Account ready. Signing you in…" : "Signed in.");
+      const pending = sessionStorage.getItem("tiktok_oauth_search");
+      if (pending) {
+        sessionStorage.removeItem("tiktok_oauth_search");
+        window.location.replace(`/tiktok-callback${pending}`);
+        return;
       }
       nav({ to: "/generate" });
     } catch (err) {
@@ -51,7 +62,11 @@ function LoginPage() {
             <span className="text-xl font-bold tracking-tight">RYVAL</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Content Command Center</h1>
-          <p className="text-sm text-muted-foreground mt-1">{mode === "signin" ? "Sign in to keep shipping." : "Create your internal admin account."}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {mode === "signin"
+              ? "Sign in with email and password. No inbox link needed."
+              : "Create an internal account. Local signup skips email confirmation."}
+          </p>
         </div>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">

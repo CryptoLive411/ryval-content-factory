@@ -49,9 +49,9 @@ export const STATUSES = [
 ] as const;
 
 export const CTA_TYPES = [
+  "download app",
   "join waitlist in bio",
   "join waitlist",
-  "download app",
   "build profile",
   "coach early access",
   "follow for recruiting tips",
@@ -76,7 +76,7 @@ export const TEMPLATE_PRESETS = [
   { id: "founder", name: "Founder Insight", bg: "linear-gradient(180deg,#111,#222)", accent: "#facc15", text: "#ffffff" },
 ];
 
-export const DEFAULT_PROMPT = `Create faceless slideshow carousel posts for Ryval, a soccer recruiting app helping athletes get discovered and helping college coaches find players faster.
+export const DEFAULT_PROMPT = `Create faceless slideshow carousel posts for Ryval, a global sports network (soccer-first) that helps athletes get discovered and helps coaches find players — college is one pathway, not the only story.
 
 Each post should have short, powerful slide text, max 12 words per slide. Tone should be direct, helpful, premium, slightly intense, and not cheesy.
 

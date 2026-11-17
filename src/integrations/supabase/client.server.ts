@@ -24,7 +24,11 @@ function createSupabaseAdminClient() {
       storage: undefined,
       persistSession: false,
       autoRefreshToken: false,
-    }
+    },
+    realtime: {
+      // Server functions only use REST. Avoid Node 20 WebSocket crash.
+      worker: false,
+    },
   });
 }
 

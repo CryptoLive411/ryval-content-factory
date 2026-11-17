@@ -1,0 +1,9 @@
+[Unit]
+Description=Publish due Ryval Content Forge posts
+After=ryval-forge.service
+
+[Service]
+Type=oneshot
+TimeoutStartSec=600
+WorkingDirectory=/opt/ryval-content-forge
+ExecStart=/bin/bash /opt/ryval-content-forge/scripts/cron-publish.sh

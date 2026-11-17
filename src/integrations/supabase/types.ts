@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       assets: {
@@ -44,6 +69,123 @@ export type Database = {
           id?: string
           tags?: string[] | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      content_sources: {
+        Row: {
+          category: string
+          created_at: string
+          enabled: boolean
+          feed_url: string | null
+          id: string
+          last_checked_at: string | null
+          last_status: string | null
+          name: string
+          notes: string | null
+          reliability: string
+          source_type: string
+          update_frequency_minutes: number
+          url: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          enabled?: boolean
+          feed_url?: string | null
+          id?: string
+          last_checked_at?: string | null
+          last_status?: string | null
+          name: string
+          notes?: string | null
+          reliability?: string
+          source_type: string
+          update_frequency_minutes?: number
+          url: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          enabled?: boolean
+          feed_url?: string | null
+          id?: string
+          last_checked_at?: string | null
+          last_status?: string | null
+          name?: string
+          notes?: string | null
+          reliability?: string
+          source_type?: string
+          update_frequency_minutes?: number
+          url?: string
+        }
+        Relationships: []
+      }
+      media_assets: {
+        Row: {
+          best_use: string[]
+          created_at: string
+          credit: string | null
+          height: number | null
+          id: string
+          last_used_at: string | null
+          license: string | null
+          license_status: string
+          notes: string | null
+          orientation: string
+          origin: string
+          safe_to_use: boolean
+          source_url: string | null
+          sport: string | null
+          subject_people: string[]
+          subject_program: string | null
+          tags: string[]
+          url: string
+          use_count: number
+          width: number | null
+        }
+        Insert: {
+          best_use?: string[]
+          created_at?: string
+          credit?: string | null
+          height?: number | null
+          id?: string
+          last_used_at?: string | null
+          license?: string | null
+          license_status?: string
+          notes?: string | null
+          orientation?: string
+          origin: string
+          safe_to_use?: boolean
+          source_url?: string | null
+          sport?: string | null
+          subject_people?: string[]
+          subject_program?: string | null
+          tags?: string[]
+          url: string
+          use_count?: number
+          width?: number | null
+        }
+        Update: {
+          best_use?: string[]
+          created_at?: string
+          credit?: string | null
+          height?: number | null
+          id?: string
+          last_used_at?: string | null
+          license?: string | null
+          license_status?: string
+          notes?: string | null
+          orientation?: string
+          origin?: string
+          safe_to_use?: boolean
+          source_url?: string | null
+          sport?: string | null
+          subject_people?: string[]
+          subject_program?: string | null
+          tags?: string[]
+          url?: string
+          use_count?: number
+          width?: number | null
         }
         Relationships: []
       }
@@ -163,6 +305,7 @@ export type Database = {
           created_at: string
           cta: string | null
           cta_type: string | null
+          export_slide_urls: string[]
           hashtags: string | null
           hook: string
           id: string
@@ -170,6 +313,7 @@ export type Database = {
           logo_url: string | null
           notes: string | null
           platform: Database["public"]["Enums"]["platform"] | null
+          posted_at: string | null
           scheduled_date: string | null
           slide_2: string | null
           slide_3: string | null
@@ -178,6 +322,10 @@ export type Database = {
           slide_6: string | null
           status: Database["public"]["Enums"]["post_status"]
           template_id: string | null
+          tiktok_error: string | null
+          tiktok_privacy_level: string | null
+          tiktok_publish_id: string | null
+          tiktok_status: string | null
           tone: string | null
           updated_at: string
           user_id: string
@@ -194,6 +342,7 @@ export type Database = {
           created_at?: string
           cta?: string | null
           cta_type?: string | null
+          export_slide_urls?: string[]
           hashtags?: string | null
           hook?: string
           id?: string
@@ -201,6 +350,7 @@ export type Database = {
           logo_url?: string | null
           notes?: string | null
           platform?: Database["public"]["Enums"]["platform"] | null
+          posted_at?: string | null
           scheduled_date?: string | null
           slide_2?: string | null
           slide_3?: string | null
@@ -209,6 +359,10 @@ export type Database = {
           slide_6?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           template_id?: string | null
+          tiktok_error?: string | null
+          tiktok_privacy_level?: string | null
+          tiktok_publish_id?: string | null
+          tiktok_status?: string | null
           tone?: string | null
           updated_at?: string
           user_id: string
@@ -225,6 +379,7 @@ export type Database = {
           created_at?: string
           cta?: string | null
           cta_type?: string | null
+          export_slide_urls?: string[]
           hashtags?: string | null
           hook?: string
           id?: string
@@ -232,6 +387,7 @@ export type Database = {
           logo_url?: string | null
           notes?: string | null
           platform?: Database["public"]["Enums"]["platform"] | null
+          posted_at?: string | null
           scheduled_date?: string | null
           slide_2?: string | null
           slide_3?: string | null
@@ -240,6 +396,10 @@ export type Database = {
           slide_6?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           template_id?: string | null
+          tiktok_error?: string | null
+          tiktok_privacy_level?: string | null
+          tiktok_publish_id?: string | null
+          tiktok_status?: string | null
           tone?: string | null
           updated_at?: string
           user_id?: string
@@ -276,6 +436,90 @@ export type Database = {
         }
         Relationships: []
       }
+      stories: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          needs_review: boolean
+          players: Json
+          post_id: string | null
+          published_at: string | null
+          relevance_score: number
+          review_reason: string | null
+          schools: Json
+          source_id: string | null
+          source_name: string
+          source_url: string
+          stats: Json
+          status: string
+          story_url: string
+          suggested_format: string | null
+          summary: string | null
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          needs_review?: boolean
+          players?: Json
+          post_id?: string | null
+          published_at?: string | null
+          relevance_score?: number
+          review_reason?: string | null
+          schools?: Json
+          source_id?: string | null
+          source_name: string
+          source_url: string
+          stats?: Json
+          status?: string
+          story_url: string
+          suggested_format?: string | null
+          summary?: string | null
+          title: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          needs_review?: boolean
+          players?: Json
+          post_id?: string | null
+          published_at?: string | null
+          relevance_score?: number
+          review_reason?: string | null
+          schools?: Json
+          source_id?: string | null
+          source_name?: string
+          source_url?: string
+          stats?: Json
+          status?: string
+          story_url?: string
+          suggested_format?: string | null
+          summary?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stories_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stories_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "content_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       templates: {
         Row: {
           accent_color: string
@@ -308,6 +552,81 @@ export type Database = {
           id?: string
           logo_position?: string
           template_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tiktok_accounts: {
+        Row: {
+          access_token: string
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          expires_at: string
+          id: string
+          open_id: string
+          refresh_expires_at: string | null
+          refresh_token: string
+          scopes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          expires_at: string
+          id?: string
+          open_id: string
+          refresh_expires_at?: string | null
+          refresh_token: string
+          scopes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          expires_at?: string
+          id?: string
+          open_id?: string
+          refresh_expires_at?: string | null
+          refresh_token?: string
+          scopes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          autopilot_enabled: boolean
+          autopilot_interval_hours: number
+          autopilot_queue_hours: number
+          generation_cursor: number
+          preferred_privacy: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          autopilot_enabled?: boolean
+          autopilot_interval_hours?: number
+          autopilot_queue_hours?: number
+          generation_cursor?: number
+          preferred_privacy?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          autopilot_enabled?: boolean
+          autopilot_interval_hours?: number
+          autopilot_queue_hours?: number
+          generation_cursor?: number
+          preferred_privacy?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -364,12 +683,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -393,11 +712,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -418,11 +737,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -443,11 +762,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -460,11 +779,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -474,6 +793,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       account: ["ryval_main", "recruiting_truth", "global_pathway", "founder"],

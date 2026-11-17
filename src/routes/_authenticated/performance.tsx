@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, PageShell, StatCard } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { editorialTitle } from "@/lib/content-quality";
 
 export const Route = createFileRoute("/_authenticated/performance")({ component: Performance });
 
@@ -60,7 +61,7 @@ function Performance() {
           const r = perfRows.find(x => x.post_id === p.id) ?? { views: 0, likes: 0, saves: 0, signups: 0 };
           return (
             <div key={p.id} className="rounded-xl border border-border bg-card p-4 grid md:grid-cols-6 gap-3 items-center">
-              <p className="md:col-span-2 font-medium truncate">{p.hook}</p>
+              <p className="md:col-span-2 font-medium truncate">{editorialTitle(p.hook)}</p>
               {(["views","likes","saves","signups"] as const).map(k => (
                 <Input key={k} type="number" placeholder={k} defaultValue={(r as any)[k] ?? 0}
                   onBlur={e => upsert.mutate({ post_id: p.id, patch: { [k]: Number(e.target.value) } })} />

@@ -6,12 +6,17 @@ import { CarouselPreview } from "@/components/carousel-preview";
 export const Route = createFileRoute("/_authenticated/templates")({ component: Templates });
 
 const SAMPLE = {
-  hook: "Talent is not enough.",
-  slide_2: "Coaches can't find you.",
-  slide_3: "Your highlight tape is too long.",
-  slide_4: "Your profile is scattered.",
-  slide_5: "Recruiting is moving mobile.",
-  cta: "Build your Ryval profile before launch.",
+  hook: "5 reasons college coaches aren't responding to you.\n---\nIt's probably not what you think.",
+  slide_2:
+    "Your message is too generic.\n---\nCoaches receive hundreds of messages from players every week. If yours sounds like everyone else's, it's easy to ignore.\n---\nMention specific reasons you're interested in their program.",
+  slide_3:
+    "You're contacting programs that don't need your position.\n---\nMany players reach out without researching roster needs. If a program is already full at your position, they won't respond.\n---\nTarget schools that actually have a need at your position.",
+  slide_4:
+    "Your film doesn't show enough, quickly enough.\n---\nCoaches don't have time to watch 10 minutes of unedited footage. You have about 30 seconds to make an impression.\n---\nKeep your highlight video 1–3 minutes, best clips first.",
+  slide_5:
+    "Your profile is incomplete.\n---\nCoaches want to quickly see position, graduation year, height, weight, and film. Missing details create doubt.\n---\nMake sure your Ryval profile is 100% complete.",
+  cta: "Ryval puts your film in front of coaches hunting your position.\n---\nBuild one profile coaches can open — film, position, and real roster needs.\n---\nDownload Ryval on the App Store.",
+  app_screen_url: "/app-screens/discover.jpg",
 };
 
 function Templates() {
