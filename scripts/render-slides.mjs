@@ -271,9 +271,14 @@ async function loadSchoolCrest(canvasPkg, url) {
   } else {
     candidates.push(url);
   }
-  for (const src of candidates) {
-    const img = await loadImg(canvasPkg, src);
-    if (img && img.width > 0 && img.height > 0) return img;
+  // A second pass after a pause: ncaa.com sometimes drops one request, and a missing
+  // crest leaves a hole in a leaderboard row.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 1500));
+    for (const src of candidates) {
+      const img = await loadImg(canvasPkg, src);
+      if (img && img.width > 0 && img.height > 0) return img;
+    }
   }
   return null;
 }

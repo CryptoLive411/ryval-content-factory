@@ -377,6 +377,9 @@ async function autopilotStoryPost(opts: {
     slide_image_prompts: rawSlides.map((row) => row.imagePrompt),
   };
   const cleaned = postProcessBrandPost(packed, 7);
+  // Stats slides are drawn from the spec, so the hook is only the TikTok title: keep it whole
+  // (the 16-word cap cut "…the most in D1 men's soccer" to "…the most in D1 men's").
+  if (statSpec) cleaned.hook = packed.hook;
   cleaned.cta = packEditorial(story.ctaHeadline, story.ctaBody, "");
   if (story.caption?.trim()) cleaned.caption = story.caption.trim();
   if (story.hashtags?.trim()) cleaned.hashtags = story.hashtags.trim();

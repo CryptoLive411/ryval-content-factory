@@ -263,9 +263,22 @@ async function drawCover(ctx, helpers, post, spec, slide, photo) {
   }
   y -= 18;
 
-  // The number is the hero. Unit stacks to its right.
-  const bigSize = slide.big.length >= 3 ? 330 : 400;
-  ctx.font = `400 ${bigSize}px ${DISPLAY}`;
+  // The number is the hero. Unit stacks to its right, so the number shrinks until both fit
+  // ("68.4%" is far wider than "12").
+  ctx.font = `800 56px ${COND}`;
+  const unitNeed = ctx.measureText(slide.unit ?? "").width;
+  ctx.font = `700 24px ${MONO_BOLD}`;
+  const subNeed = [...String(slide.unitSub ?? "")].reduce(
+    (sum, c) => sum + ctx.measureText(c).width + 2,
+    0,
+  );
+  const besideW = Math.max(unitNeed, subNeed) + 26;
+  let bigSize = slide.big.length >= 3 ? 330 : 400;
+  for (;;) {
+    ctx.font = `400 ${bigSize}px ${DISPLAY}`;
+    if (PAD + ctx.measureText(slide.big).width + besideW <= W - PAD || bigSize <= 200) break;
+    bigSize -= 10;
+  }
   const bigW = ctx.measureText(slide.big).width;
   const m = ctx.measureText(slide.big);
   const capH = m.actualBoundingBoxAscent || bigSize * 0.72;

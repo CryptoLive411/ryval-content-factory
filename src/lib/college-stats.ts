@@ -544,7 +544,9 @@ function storyFrom(raw: {
     kind: "stats",
     desk: "media",
     gender: opts.side,
-    hook: opts.hook,
+    // The hook is the TikTok title, which stops at 90 characters. A long school name can pass
+    // that; then keep the first clause ("X has gone 13 games without a loss") whole.
+    hook: opts.hook.length <= 90 ? opts.hook : (opts.hook.split(", ")[0] ?? opts.hook).slice(0, 90),
     hookBody: opts.hookBody,
     slides: opts.slides.slice(0, 4),
     ctaHeadline: CTA_HEADLINE,
