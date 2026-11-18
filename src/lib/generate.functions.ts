@@ -335,7 +335,7 @@ async function autopilotStoryPost(opts: {
       .map(canonicalStoryId),
   ];
   const recentKinds = memory.map((row) => kindFromNotes(row.notes));
-  // RyvalApp and Ryval Sports lead with college stats from Ryval's own data. If the API is down
+  // Every account leads with college stats from Ryval's own data (STATS_DESKS). If the API is down
   // or nothing new is ready, the slot falls through to the written stories as before.
   const stats: CollegeStatsStory | null = STATS_DESKS.has(desk)
     ? await pickCollegeStatsStory({ side: photoGender, recentIds, recentHooks, desk }).catch(() => null)

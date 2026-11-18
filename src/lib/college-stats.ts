@@ -21,8 +21,12 @@ export const RYVAL_API_BASE =
   (typeof process !== "undefined" && process.env?.RYVAL_API_BASE?.replace(/\/+$/, "")) ||
   "https://api.ryvalsports.app";
 
-/** Accounts whose slots go to college stats first. The education account keeps its recruiting lessons. */
-export const STATS_DESKS: ReadonlySet<StoryDesk> = new Set<StoryDesk>(["ryval", "media"]);
+/** Accounts whose slots go to college stats first. All three since 2026-11-18; remove a desk to give it back to the lessons. */
+export const STATS_DESKS: ReadonlySet<StoryDesk> = new Set<StoryDesk>([
+  "ryval",
+  "media",
+  "education",
+]);
 
 /** Accent per side, as in the graphic videos: men electric blue, women volt. */
 const ACCENT = { men: "#4D8DFF", women: "#C6FF3D" } as const;
@@ -482,10 +486,32 @@ function tidy<T>(value: T): T {
   return value;
 }
 
-/** First sentence only: the caption states the fact, the close sells the download. */
+/** Short forms inside school names and stats ("St. Olaf", "Colo. Sch. of Mines", "N.C. State"). */
+const ABBREV = new Set(
+  (
+    "st ste mt ft jr sr dr vs no colo sch univ inst coll col n.c s.c so ill ind fla ga ala ark " +
+    "calif conn mich minn miss mo neb okla pa tenn tex va wash wis ky la md mass ore ariz kan " +
+    "del wyo vt nev mont"
+  ).split(" "),
+);
+
+/**
+ * First sentence only: the caption states the fact, the close sells the download.
+ * It does not stop at "St. Olaf", "No. 1" or "Colo. Sch. of Mines".
+ */
 function firstSentence(text: string) {
-  const m = text.match(/^.+?[.!?](?=\s|$)/);
-  return (m ? m[0] : text).trim();
+  const ends = /[.!?](?=\s|$)/g;
+  for (let m = ends.exec(text); m; m = ends.exec(text)) {
+    const end = m.index + 1;
+    const after = text.slice(end).trimStart();
+    if (!after) break;
+    if (m[0] === ".") {
+      const word = /([A-Za-z.]+)$/.exec(text.slice(0, m.index))?.[1]?.toLowerCase() ?? "";
+      if (!/^[A-Z]/.test(after) || ABBREV.has(word) || /^[a-z]$/.test(word)) continue;
+    }
+    return text.slice(0, end).trim();
+  }
+  return text.trim();
 }
 
 /**

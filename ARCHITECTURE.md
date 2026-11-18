@@ -174,7 +174,7 @@ Posted rows are kept on purpose. Deleting them would let those topics come back.
 
 ## College stats
 
-RyvalApp and Ryval Sports try a college stats post before the slate and the catalog (`pickCollegeStatsStory()` in `src/lib/college-stats.ts`, called from `autopilotStoryPost()`). The data is Ryval's public college soccer API, not the third-party NCAA mirror. The post carries a `stat_spec:` line in `notes`, `kind:stats`, and `stats:<family>`. `scripts/render-slides.mjs` hands any post with that line to `scripts/render-stats.mjs`. `HOW-POSTS-WORK.md` has the families, the checks, and the switch (`STATS_DESKS`).
+Every account tries a college stats post before the slate and the catalog (`pickCollegeStatsStory()` in `src/lib/college-stats.ts`, called from `autopilotStoryPost()`). The data is Ryval's public college soccer API, not the third-party NCAA mirror. The post carries a `stat_spec:` line in `notes`, `kind:stats`, and `stats:<family>`. `scripts/render-slides.mjs` hands any post with that line to `scripts/render-stats.mjs`. `HOW-POSTS-WORK.md` has the families, the checks, and the switch (`STATS_DESKS`).
 
 ## News
 

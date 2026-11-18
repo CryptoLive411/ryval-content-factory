@@ -12,7 +12,7 @@ If step 1 fails, steps 2 and 3 still run.
 
 ## College stats posts (added 2026-11-17)
 
-RyvalApp and Ryval Sports now try a college stats post first for each of their slots. Ryval Sports || Recruting App keeps the recruiting lessons. At 2 posts per account per day, that is 4 stats posts and 2 lessons a day. `STATS_DESKS` in `src/lib/college-stats.ts` is the switch. Remove a desk there to give that account back to the stories.
+All three accounts (RyvalApp, Ryval Sports, Ryval Sports || Recruting App) try a college stats post first for each of their slots, so all 6 posts a day are stats. A lesson only goes out when the API is down or nothing new is ready. `STATS_DESKS` in `src/lib/college-stats.ts` is the switch. Remove a desk there to give that account back to the stories.
 
 The numbers come from Ryval's own public API (`https://api.ryvalsports.app/college-soccer/...`), the same data the app and the web dashboard show. Nothing is written by a model.
 
